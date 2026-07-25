@@ -603,6 +603,10 @@ function ClassTestCreateForm({ locationState }: { locationState: ClassTestCreate
       window.alert('Thời gian mở bài phải nhỏ hơn thời gian đóng bài.')
       return
     }
+    if (hasAmbiguousPolicy) {
+      window.alert('Vui lòng chọn một chính sách đánh giá phù hợp trước khi tạo.')
+      return
+    }
     if (!(await confirm({ message: 'Bạn có chắc muốn tạo bài trên lớp này không?' }))) {
       return
     }
@@ -610,7 +614,7 @@ function ClassTestCreateForm({ locationState }: { locationState: ClassTestCreate
       const created = await createMutation.mutateAsync({
         payload: {
           assessmentPolicyId,
-          closeAt: closeAtIso,
+          closeAt: toIsoDateTime(closeAt),
           description: description || null,
           existingBlueprintId: creationMode === 'blueprint' ? selectedBlueprint?.id : null,
           existingBlueprintVersionId: creationMode === 'blueprint' ? selectedVersion?.id : null,

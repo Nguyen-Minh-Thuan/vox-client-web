@@ -595,6 +595,24 @@ const SystemAdminScoringRulePoliciesPage = lazy(() =>
   })),
 );
 
+const SystemAdminSubscriptionPage = lazy(() =>
+  import("@/features/subscription_system").then((module) => ({
+    default: module.SystemAdminSubscriptionPage,
+  })),
+);
+
+const SchoolAdminSubscriptionPage = lazy(() =>
+  import("@/features/subscription_school").then((module) => ({
+    default: module.SchoolAdminSubscriptionPage,
+  })),
+);
+
+const SchoolAdminSubscriptionPaymentResultPage = lazy(() =>
+  import("@/features/subscription_school").then((module) => ({
+    default: module.PaymentResultPage,
+  })),
+);
+
 export function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
@@ -696,6 +714,10 @@ export function AppRoutes() {
             <Route
               path="system-admin/scoring-rules"
               element={<SystemAdminScoringRulePoliciesPage />}
+            />
+            <Route
+              path="system-admin/subscription"
+              element={<SystemAdminSubscriptionPage />}
             />
           </Route>
         </Route>
@@ -877,6 +899,14 @@ export function AppRoutes() {
               path="school-admin/scoring-rules"
               element={<SchoolAdminScoringRulePoliciesPage />}
             />
+            <Route
+              path="school-admin/subscription"
+              element={<SchoolAdminSubscriptionPage />}
+            />
+            <Route
+              path="school-admin/subscription/payment-result"
+              element={<SchoolAdminSubscriptionPaymentResultPage />}
+            />
           </Route>
         </Route>
         <Route element={<RequireRole role="TEACHER" />}>
@@ -890,15 +920,11 @@ export function AppRoutes() {
               element={<TeacherMonitoringRoomsPage />}
             />
             <Route
-<<<<<<< HEAD
               path="teacher/proctor-attendance"
               element={<TeacherProctorAttendancePage />}
             />
             <Route
-              path="teacher/monitoring/exams/:examId/rooms/:roomId"
-=======
               path="teacher/monitoring/exams/:examId/schedules/:scheduleId"
->>>>>>> main
               element={<MonitoringRoomPage />}
             />
             <Route path="teacher/question-banks" element={<TeacherQuestionBanksPage />} />
