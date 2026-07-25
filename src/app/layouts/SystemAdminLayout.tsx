@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Bell,
+  BookOpen,
   Building2,
   ChevronDown,
   ClipboardCheck,
@@ -62,6 +63,11 @@ const navigationItems: NavigationItem[] = [
     icon: Library,
     label: 'Danh mục trường',
     to: '/system-admin/school-directory',
+  },
+  {
+    icon: BookOpen,
+    label: 'Quản lý framework',
+    to: '/system-admin/frameworks',
   },
   {
     icon: Users,

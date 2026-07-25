@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   FileQuestion,
   FileSpreadsheet,
+  GraduationCap,
   Home,
   Layers,
   LogOut,
@@ -65,6 +66,11 @@ const navigationItems = [
     icon: Users,
     label: 'Quản lý Người dùng',
     to: '/school-admin/students',
+  },
+  {
+    icon: GraduationCap,
+    label: 'Khung năng lực',
+    to: '/school-admin/frameworks',
   },
 ]
 
