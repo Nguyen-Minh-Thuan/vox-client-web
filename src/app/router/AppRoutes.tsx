@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { SchoolAdminLayout } from "@/app/layouts/SchoolAdminLayout";
+import { StudentLayout } from "@/app/layouts/StudentLayout";
 import { SystemAdminLayout } from "@/app/layouts/SystemAdminLayout";
 import { TeacherLayout } from "@/app/layouts/TeacherLayout";
 import { RequireRole } from "./RequireRole";
@@ -167,9 +168,27 @@ const SchoolAdminGradeImportPage = lazy(() =>
   })),
 )
 
-const SchoolAdminSchoolUsersPage = lazy(() =>
+const SchoolAdminRoomsPage = lazy(() =>
+  import('@/features/school-room').then((module) => ({
+    default: module.SchoolAdminRoomsPage,
+  })),
+)
+
+const SchoolAdminRoomImportPage = lazy(() =>
+  import('@/features/school-room').then((module) => ({
+    default: module.SchoolAdminRoomImportPage,
+  })),
+)
+
+const SchoolAdminStudentsPage = lazy(() =>
   import("@/features/school-users").then((module) => ({
-    default: module.SchoolAdminSchoolUsersPage,
+    default: module.SchoolAdminStudentsPage,
+  })),
+);
+
+const SchoolAdminTeachersPage = lazy(() =>
+  import("@/features/school-users").then((module) => ({
+    default: module.SchoolAdminTeachersPage,
   })),
 );
 
@@ -206,6 +225,12 @@ const SystemAdminSchoolsPage = lazy(() =>
 const TeacherMonitoringRoomsPage = lazy(() =>
   import("@/features/monitoring").then((module) => ({
     default: module.TeacherMonitoringRoomsPage,
+  })),
+);
+
+const TeacherProctorAttendancePage = lazy(() =>
+  import("@/features/exam-proctor").then((module) => ({
+    default: module.TeacherProctorAttendancePage,
   })),
 );
 
@@ -317,70 +342,311 @@ const SystemAdminQuestionImportPage = lazy(() =>
   import("@/features/question").then((m) => ({ default: m.SystemAdminQuestionImportPage })),
 );
 
-// exam: blueprints
-const TeacherBlueprintsPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.TeacherBlueprintsPage })),
+// classTest: class tests
+const TeacherClassTestsPage = lazy(() =>
+  import("@/features/classTest").then((m) => ({ default: m.TeacherClassTestsPage })),
 );
-const TeacherBlueprintDetailPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.TeacherBlueprintDetailPage })),
+const TeacherClassTestCreatePage = lazy(() =>
+  import("@/features/classTest").then((m) => ({ default: m.TeacherClassTestCreatePage })),
 );
-const SchoolAdminBlueprintsPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.SchoolAdminBlueprintsPage })),
+const TeacherClassTestDetailPage = lazy(() =>
+  import("@/features/classTest").then((m) => ({ default: m.TeacherClassTestDetailPage })),
 );
-const SchoolAdminBlueprintDetailPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.SchoolAdminBlueprintDetailPage })),
+const SchoolAdminClassTestsPage = lazy(() =>
+  import("@/features/classTest").then((m) => ({ default: m.SchoolAdminClassTestsPage })),
 );
-const SystemAdminBlueprintsPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.SystemAdminBlueprintsPage })),
-);
-const SystemAdminBlueprintDetailPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.SystemAdminBlueprintDetailPage })),
+const SchoolAdminClassTestDetailPage = lazy(() =>
+  import("@/features/classTest").then((m) => ({ default: m.SchoolAdminClassTestDetailPage })),
 );
 
-// exam: exams
+// exam: centralized exams
 const TeacherExamsPage = lazy(() =>
   import("@/features/exam").then((m) => ({ default: m.TeacherExamsPage })),
 );
 const TeacherExamDetailPage = lazy(() =>
   import("@/features/exam").then((m) => ({ default: m.TeacherExamDetailPage })),
 );
-const TeacherExamPapersPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.TeacherExamPapersPage })),
-);
-const TeacherExamPaperDetailPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.TeacherExamPaperDetailPage })),
-);
-const TeacherExamPaperEditPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.TeacherExamPaperEditPage })),
-);
 const SchoolAdminExamsPage = lazy(() =>
   import("@/features/exam").then((m) => ({ default: m.SchoolAdminExamsPage })),
+);
+const SchoolAdminExamCreatePage = lazy(() =>
+  import("@/features/exam").then((m) => ({ default: m.SchoolAdminExamCreatePage })),
 );
 const SchoolAdminExamDetailPage = lazy(() =>
   import("@/features/exam").then((m) => ({ default: m.SchoolAdminExamDetailPage })),
 );
-const SystemAdminExamsPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.SystemAdminExamsPage })),
-);
-const SystemAdminExamDetailPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.SystemAdminExamDetailPage })),
+
+const SchoolAdminExamResultsListPage = lazy(() =>
+  import("@/features/exam-results").then((module) => ({
+    default: module.SchoolAdminExamResultsListPage,
+  })),
 );
 
-// exam: class tests
-const TeacherClassTestsPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.TeacherClassTestsPage })),
+const SchoolAdminExamResultDetailPage = lazy(() =>
+  import("@/features/exam-results").then((module) => ({
+    default: module.SchoolAdminExamResultDetailPage,
+  })),
 );
-const TeacherClassTestCreatePage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.TeacherClassTestCreatePage })),
+
+const TeacherExamResultsListPage = lazy(() =>
+  import("@/features/exam-results").then((module) => ({
+    default: module.TeacherExamResultsListPage,
+  })),
 );
-const TeacherClassTestDetailPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.TeacherClassTestDetailPage })),
+
+const TeacherExamResultDetailPage = lazy(() =>
+  import("@/features/exam-results").then((module) => ({
+    default: module.TeacherExamResultDetailPage,
+  })),
 );
-const SchoolAdminClassTestsPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.SchoolAdminClassTestsPage })),
+
+const StudentExamsPage = lazy(() =>
+  import("@/features/student-exams").then((module) => ({
+    default: module.StudentExamsPage,
+  })),
 );
-const SchoolAdminClassTestDetailPage = lazy(() =>
-  import("@/features/exam").then((m) => ({ default: m.SchoolAdminClassTestDetailPage })),
+
+const StudentExamResultPage = lazy(() =>
+  import("@/features/student-exams").then((module) => ({
+    default: module.StudentExamResultPage,
+  })),
+);
+
+// reevaluation: phúc khảo
+const SchoolAdminReevaluationPage = lazy(() =>
+  import("@/features/reevaluation").then((m) => ({ default: m.SchoolAdminReevaluationPage })),
+);
+const SchoolAdminReevaluationDetailPage = lazy(() =>
+  import("@/features/reevaluation").then((m) => ({ default: m.SchoolAdminReevaluationDetailPage })),
+);
+const TeacherReevaluationPage = lazy(() =>
+  import("@/features/reevaluation").then((m) => ({ default: m.TeacherReevaluationPage })),
+);
+const TeacherReevaluationRescorePage = lazy(() =>
+  import("@/features/reevaluation").then((m) => ({ default: m.TeacherReevaluationRescorePage })),
+);
+
+// grading: chấm điểm thủ công (admin phân công -> giáo viên chấm bài chờ chấm)
+const SchoolAdminGradingPage = lazy(() =>
+  import("@/features/grading").then((m) => ({ default: m.SchoolAdminGradingPage })),
+);
+const TeacherGradingPage = lazy(() =>
+  import("@/features/grading").then((m) => ({ default: m.TeacherGradingPage })),
+);
+const TeacherGradingTaskPage = lazy(() =>
+  import("@/features/grading").then((m) => ({ default: m.TeacherGradingTaskPage })),
+);
+
+// examCore: exam papers + blueprints (shared by exam & classTest)
+const TeacherExamPaperEditPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.TeacherExamPaperEditPage })),
+);
+const SchoolAdminExamPaperViewPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.SchoolAdminExamPaperViewPage })),
+);
+const TeacherBlueprintsPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.TeacherBlueprintsPage })),
+);
+const TeacherBlueprintDetailPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.TeacherBlueprintDetailPage })),
+);
+const SchoolAdminBlueprintsPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.SchoolAdminBlueprintsPage })),
+);
+const SchoolAdminBlueprintDetailPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.SchoolAdminBlueprintDetailPage })),
+);
+const TeacherCreateBlueprintVersionPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.TeacherCreateBlueprintVersionPage })),
+);
+const SchoolAdminCreateBlueprintVersionPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.SchoolAdminCreateBlueprintVersionPage })),
+);
+const TeacherBlueprintVersionDetailPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.TeacherBlueprintVersionDetailPage })),
+);
+const TeacherEditBlueprintVersionPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.TeacherEditBlueprintVersionPage })),
+);
+const SchoolAdminBlueprintVersionDetailPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.SchoolAdminBlueprintVersionDetailPage })),
+);
+const SchoolAdminEditBlueprintVersionPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.SchoolAdminEditBlueprintVersionPage })),
+);
+const SchoolAdminSelectRubricVersionPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.SchoolAdminSelectRubricVersionPage })),
+);
+const TeacherSelectRubricVersionPage = lazy(() =>
+  import("@/features/examCore").then((m) => ({ default: m.TeacherSelectRubricVersionPage })),
+);
+
+const SchoolAdminRubricsPage = lazy(() =>
+  import("@/features/rubrics_school").then((module) => ({
+    default: module.SchoolAdminRubricsPage,
+  })),
+);
+
+const SchoolAdminRubricDetailPage = lazy(() =>
+  import("@/features/rubrics_school").then((module) => ({
+    default: module.SchoolAdminRubricDetailPage,
+  })),
+);
+
+const SchoolAdminRubricVersionDetailPage = lazy(() =>
+  import("@/features/rubrics_school").then((module) => ({
+    default: module.SchoolAdminRubricVersionDetailPage,
+  })),
+);
+
+const SchoolAdminRubricCriterionDetailPage = lazy(() =>
+  import("@/features/rubrics_school").then((module) => ({
+    default: module.SchoolAdminRubricCriterionDetailPage,
+  })),
+);
+
+const SchoolAdminRubricVersionImportPage = lazy(() =>
+  import("@/features/rubrics_school").then((module) => ({
+    default: module.SchoolAdminRubricVersionImportPage,
+  })),
+);
+
+const SchoolAdminRubricCriterionImportPage = lazy(() =>
+  import("@/features/rubrics_school").then((module) => ({
+    default: module.SchoolAdminRubricCriterionImportPage,
+  })),
+);
+
+const SchoolAdminRubricResultBandImportPage = lazy(() =>
+  import("@/features/rubrics_school").then((module) => ({
+    default: module.SchoolAdminRubricResultBandImportPage,
+  })),
+);
+
+const SchoolAdminRubricCriterionBandImportPage = lazy(() =>
+  import("@/features/rubrics_school").then((module) => ({
+    default: module.SchoolAdminRubricCriterionBandImportPage,
+  })),
+);
+
+const SystemAdminRubricsPage = lazy(() =>
+  import("@/features/rubric_system").then((module) => ({
+    default: module.SystemAdminRubricsPage,
+  })),
+);
+
+const SystemAdminAssessmentPoliciesPage = lazy(() =>
+  import("@/features/assessment_policy_system").then((module) => ({
+    default: module.SystemAdminAssessmentPoliciesPage,
+  })),
+);
+
+const SystemAdminAssessmentPolicyDetailPage = lazy(() =>
+  import("@/features/assessment_policy_system").then((module) => ({
+    default: module.SystemAdminAssessmentPolicyDetailPage,
+  })),
+);
+
+const SystemAdminAssessmentPolicyImportPage = lazy(() =>
+  import("@/features/assessment_policy_system").then((module) => ({
+    default: module.SystemAdminAssessmentPolicyImportPage,
+  })),
+);
+
+const SystemAdminRubricDetailPage = lazy(() =>
+  import("@/features/rubric_system").then((module) => ({
+    default: module.SystemAdminRubricDetailPage,
+  })),
+);
+
+const SystemAdminRubricVersionDetailPage = lazy(() =>
+  import("@/features/rubric_system").then((module) => ({
+    default: module.SystemAdminRubricVersionDetailPage,
+  })),
+);
+
+const SystemAdminRubricCriterionDetailPage = lazy(() =>
+  import("@/features/rubric_system").then((module) => ({
+    default: module.SystemAdminRubricCriterionDetailPage,
+  })),
+);
+
+const SystemAdminRubricVersionImportPage = lazy(() =>
+  import("@/features/rubric_system").then((module) => ({
+    default: module.SystemAdminRubricVersionImportPage,
+  })),
+);
+
+const SystemAdminRubricCriterionImportPage = lazy(() =>
+  import("@/features/rubric_system").then((module) => ({
+    default: module.SystemAdminRubricCriterionImportPage,
+  })),
+);
+
+const SystemAdminRubricCriterionBandImportPage = lazy(() =>
+  import("@/features/rubric_system").then((module) => ({
+    default: module.SystemAdminRubricCriterionBandImportPage,
+  })),
+);
+
+const SchoolAdminAssessmentPoliciesPage = lazy(() =>
+  import("@/features/assessment_policy_school").then((module) => ({
+    default: module.SchoolAdminAssessmentPoliciesPage,
+  })),
+);
+
+const SchoolAdminAssessmentPolicyDetailPage = lazy(() =>
+  import("@/features/assessment_policy_school").then((module) => ({
+    default: module.SchoolAdminAssessmentPolicyDetailPage,
+  })),
+);
+
+const SchoolAdminAssessmentPolicyImportPage = lazy(() =>
+  import("@/features/assessment_policy_school").then((module) => ({
+    default: module.SchoolAdminAssessmentPolicyImportPage,
+  })),
+);
+
+const SchoolAdminScoringRulesPage = lazy(() =>
+  import("@/features/scoring_rules_school").then((module) => ({
+    default: module.SchoolAdminScoringRulesPage,
+  })),
+);
+
+const SchoolAdminScoringRulePoliciesPage = lazy(() =>
+  import("@/features/scoring_rules_school").then((module) => ({
+    default: module.SchoolAdminScoringRulePoliciesPage,
+  })),
+);
+
+const SystemAdminScoringRulesPage = lazy(() =>
+  import("@/features/scoring_rules_system").then((module) => ({
+    default: module.SystemAdminScoringRulesPage,
+  })),
+);
+
+const SystemAdminScoringRulePoliciesPage = lazy(() =>
+  import("@/features/scoring_rules_system").then((module) => ({
+    default: module.SystemAdminScoringRulePoliciesPage,
+  })),
+);
+
+const SystemAdminSubscriptionPage = lazy(() =>
+  import("@/features/subscription_system").then((module) => ({
+    default: module.SystemAdminSubscriptionPage,
+  })),
+);
+
+const SchoolAdminSubscriptionPage = lazy(() =>
+  import("@/features/subscription_school").then((module) => ({
+    default: module.SchoolAdminSubscriptionPage,
+  })),
+);
+
+const SchoolAdminSubscriptionPaymentResultPage = lazy(() =>
+  import("@/features/subscription_school").then((module) => ({
+    default: module.PaymentResultPage,
+  })),
 );
 
 export function AppRoutes() {
@@ -437,10 +703,6 @@ export function AppRoutes() {
             <Route path="system-admin/questions/create" element={<SystemAdminCreateQuestionPage />} />
             <Route path="system-admin/questions/:questionId/edit" element={<SystemAdminEditQuestionPage />} />
             <Route path="system-admin/questions/:questionId" element={<SystemAdminQuestionDetailPage />} />
-            <Route path="system-admin/blueprints" element={<SystemAdminBlueprintsPage />} />
-            <Route path="system-admin/blueprints/:blueprintId" element={<SystemAdminBlueprintDetailPage />} />
-            <Route path="system-admin/exams" element={<SystemAdminExamsPage />} />
-            <Route path="system-admin/exams/:examId" element={<SystemAdminExamDetailPage />} />
             <Route  
               path="system-admin/frameworks"
               element={<SystemAdminFrameworksPage />}
@@ -452,6 +714,58 @@ export function AppRoutes() {
             <Route
               path="system-admin/frameworks/:frameworkId/versions/:versionId"
               element={<SystemAdminFrameworkVersionDetailPage />}
+            />
+            <Route
+              path="system-admin/rubrics"
+              element={<SystemAdminRubricsPage />}
+            />
+            <Route
+              path="system-admin/rubrics/:rubricId"
+              element={<SystemAdminRubricDetailPage />}
+            />
+            <Route
+              path="system-admin/rubrics/:rubricId/versions/import"
+              element={<SystemAdminRubricVersionImportPage />}
+            />
+            <Route
+              path="system-admin/rubrics/:rubricId/versions/:versionId"
+              element={<SystemAdminRubricVersionDetailPage />}
+            />
+            <Route
+              path="system-admin/rubrics/:rubricId/versions/:versionId/criteria/import"
+              element={<SystemAdminRubricCriterionImportPage />}
+            />
+            <Route
+              path="system-admin/rubrics/:rubricId/versions/:versionId/criteria/:criterionId"
+              element={<SystemAdminRubricCriterionDetailPage />}
+            />
+            <Route
+              path="system-admin/rubrics/:rubricId/versions/:versionId/criteria/:criterionId/bands/import"
+              element={<SystemAdminRubricCriterionBandImportPage />}
+            />
+            <Route
+              path="system-admin/assessment-policies"
+              element={<SystemAdminAssessmentPoliciesPage />}
+            />
+            <Route
+              path="system-admin/assessment-policies/import"
+              element={<SystemAdminAssessmentPolicyImportPage />}
+            />
+            <Route
+              path="system-admin/assessment-policies/:policyId"
+              element={<SystemAdminAssessmentPolicyDetailPage />}
+            />
+            <Route
+              path="system-admin/assessment-policies/:policyId/scoring-rules"
+              element={<SystemAdminScoringRulesPage />}
+            />
+            <Route
+              path="system-admin/scoring-rules"
+              element={<SystemAdminScoringRulePoliciesPage />}
+            />
+            <Route
+              path="system-admin/subscription"
+              element={<SystemAdminSubscriptionPage />}
             />
           </Route>
         </Route>
@@ -466,7 +780,11 @@ export function AppRoutes() {
               element={<SchoolAdminMonitoringRoomsPage />}
             />
             <Route
-              path="school-admin/monitoring/rooms/:roomId"
+              path="school-admin/proctor-attendance"
+              element={<TeacherProctorAttendancePage />}
+            />
+            <Route
+              path="school-admin/monitoring/exams/:examId/schedules/:scheduleId"
               element={<MonitoringRoomPage />}
             />
             <Route
@@ -502,8 +820,16 @@ export function AppRoutes() {
               element={<SchoolAdminGradeLevelDetailPage />}
             />
             <Route
+              path="school-admin/rooms"
+              element={<SchoolAdminRoomsPage />}
+            />
+            <Route
+              path="school-admin/rooms/import"
+              element={<SchoolAdminRoomImportPage />}
+            />
+            <Route
               path="school-admin/students"
-              element={<SchoolAdminSchoolUsersPage />}
+              element={<SchoolAdminStudentsPage />}
             />
             <Route
               path="school-admin/students/import"
@@ -511,6 +837,14 @@ export function AppRoutes() {
             />
             <Route
               path="school-admin/students/:userId"
+              element={<SchoolAdminSchoolUserDetailPage />}
+            />
+            <Route
+              path="school-admin/teachers"
+              element={<SchoolAdminTeachersPage />}
+            />
+            <Route
+              path="school-admin/teachers/:userId"
               element={<SchoolAdminSchoolUserDetailPage />}
             />
             <Route
@@ -537,12 +871,93 @@ export function AppRoutes() {
             <Route path="school-admin/questions/create" element={<SchoolAdminCreateQuestionPage />} />
             <Route path="school-admin/questions/:questionId/edit" element={<SchoolAdminEditQuestionPage />} />
             <Route path="school-admin/questions/:questionId" element={<SchoolAdminQuestionDetailPage />} />
-            <Route path="school-admin/blueprints" element={<SchoolAdminBlueprintsPage />} />
+            <Route path="school-admin/class-tests/:examId" element={<SchoolAdminClassTestDetailPage />} />
+            <Route path="school-admin/class-tests" element={<SchoolAdminClassTestsPage />} />
+            <Route path="school-admin/exam-papers/:paperId" element={<SchoolAdminExamPaperViewPage />} />
+            <Route path="school-admin/exams/create" element={<SchoolAdminExamCreatePage />} />
+            <Route path="school-admin/rubric-versions/select" element={<SchoolAdminSelectRubricVersionPage />} />
+            <Route path="school-admin/exams/:examId" element={<SchoolAdminExamDetailPage />} />
+            <Route path="school-admin/exams" element={<SchoolAdminExamsPage />} />
+            <Route path="school-admin/exam-results" element={<SchoolAdminExamResultsListPage />} />
+            <Route path="school-admin/exam-results/:sessionId" element={<SchoolAdminExamResultDetailPage />} />
+            <Route path="school-admin/reevaluation/:requestId" element={<SchoolAdminReevaluationDetailPage />} />
+            <Route path="school-admin/reevaluation" element={<SchoolAdminReevaluationPage />} />
+            <Route path="school-admin/grading" element={<SchoolAdminGradingPage />} />
+            <Route path="school-admin/blueprints/:blueprintId/versions/new" element={<SchoolAdminCreateBlueprintVersionPage />} />
+            <Route
+              path="school-admin/blueprints/:blueprintId/versions/:versionId/edit"
+              element={<SchoolAdminEditBlueprintVersionPage />}
+            />
+            <Route
+              path="school-admin/blueprints/:blueprintId/versions/:versionId"
+              element={<SchoolAdminBlueprintVersionDetailPage />}
+            />
             <Route path="school-admin/blueprints/:blueprintId" element={<SchoolAdminBlueprintDetailPage />} />
+            <Route path="school-admin/blueprints" element={<SchoolAdminBlueprintsPage />} />
             <Route path="school-admin/exams" element={<SchoolAdminExamsPage />} />
             <Route path="school-admin/exams/:examId" element={<SchoolAdminExamDetailPage />} />
             <Route path="school-admin/class-tests" element={<SchoolAdminClassTestsPage />} />
             <Route path="school-admin/class-tests/:examId" element={<SchoolAdminClassTestDetailPage />} />
+            <Route
+              path="school-admin/rubrics"
+              element={<SchoolAdminRubricsPage />}
+            />
+            <Route
+              path="school-admin/rubrics/:rubricId"
+              element={<SchoolAdminRubricDetailPage />}
+            />
+            <Route
+              path="school-admin/rubrics/:rubricId/versions/import"
+              element={<SchoolAdminRubricVersionImportPage />}
+            />
+            <Route
+              path="school-admin/rubrics/:rubricId/versions/:versionId"
+              element={<SchoolAdminRubricVersionDetailPage />}
+            />
+            <Route
+              path="school-admin/rubrics/:rubricId/versions/:versionId/criteria/import"
+              element={<SchoolAdminRubricCriterionImportPage />}
+            />
+            <Route
+              path="school-admin/rubrics/:rubricId/versions/:versionId/bands/import"
+              element={<SchoolAdminRubricResultBandImportPage />}
+            />
+            <Route
+              path="school-admin/rubrics/:rubricId/versions/:versionId/criteria/:criterionId"
+              element={<SchoolAdminRubricCriterionDetailPage />}
+            />
+            <Route
+              path="school-admin/rubrics/:rubricId/versions/:versionId/criteria/:criterionId/bands/import"
+              element={<SchoolAdminRubricCriterionBandImportPage />}
+            />
+            <Route
+              path="school-admin/assessment-policies"
+              element={<SchoolAdminAssessmentPoliciesPage />}
+            />
+            <Route
+              path="school-admin/assessment-policies/import"
+              element={<SchoolAdminAssessmentPolicyImportPage />}
+            />
+            <Route
+              path="school-admin/assessment-policies/:policyId"
+              element={<SchoolAdminAssessmentPolicyDetailPage />}
+            />
+            <Route
+              path="school-admin/assessment-policies/:policyId/scoring-rules"
+              element={<SchoolAdminScoringRulesPage />}
+            />
+            <Route
+              path="school-admin/scoring-rules"
+              element={<SchoolAdminScoringRulePoliciesPage />}
+            />
+            <Route
+              path="school-admin/subscription"
+              element={<SchoolAdminSubscriptionPage />}
+            />
+            <Route
+              path="school-admin/subscription/payment-result"
+              element={<SchoolAdminSubscriptionPaymentResultPage />}
+            />
           </Route>
         </Route>
         <Route element={<RequireRole role="TEACHER" />}>
@@ -556,7 +971,11 @@ export function AppRoutes() {
               element={<TeacherMonitoringRoomsPage />}
             />
             <Route
-              path="teacher/monitoring/rooms/:roomId"
+              path="teacher/proctor-attendance"
+              element={<TeacherProctorAttendancePage />}
+            />
+            <Route
+              path="teacher/monitoring/exams/:examId/schedules/:scheduleId"
               element={<MonitoringRoomPage />}
             />
             <Route path="teacher/question-banks" element={<TeacherQuestionBanksPage />} />
@@ -570,16 +989,30 @@ export function AppRoutes() {
             <Route path="teacher/questions/create" element={<TeacherCreateQuestionPage />} />
             <Route path="teacher/questions/:questionId/edit" element={<TeacherEditQuestionPage />} />
             <Route path="teacher/questions/:questionId" element={<TeacherQuestionDetailPage />} />
-            <Route path="teacher/blueprints" element={<TeacherBlueprintsPage />} />
-            <Route path="teacher/blueprints/:blueprintId" element={<TeacherBlueprintDetailPage />} />
-            <Route path="teacher/exams" element={<TeacherExamsPage />} />
-            <Route path="teacher/exams/:examId/papers/:paperId/edit" element={<TeacherExamPaperEditPage />} />
-            <Route path="teacher/exams/:examId/papers/:paperId" element={<TeacherExamPaperDetailPage />} />
-            <Route path="teacher/exams/:examId/papers" element={<TeacherExamPapersPage />} />
-            <Route path="teacher/exams/:examId" element={<TeacherExamDetailPage />} />
             <Route path="teacher/class-tests/create" element={<TeacherClassTestCreatePage />} />
+            <Route path="teacher/rubric-versions/select" element={<TeacherSelectRubricVersionPage />} />
             <Route path="teacher/class-tests/:examId" element={<TeacherClassTestDetailPage />} />
             <Route path="teacher/class-tests" element={<TeacherClassTestsPage />} />
+            <Route path="teacher/exam-papers/:paperId/edit" element={<TeacherExamPaperEditPage />} />
+            <Route path="teacher/exams/:examId" element={<TeacherExamDetailPage />} />
+            <Route path="teacher/exams" element={<TeacherExamsPage />} />
+            <Route path="teacher/exam-results" element={<TeacherExamResultsListPage />} />
+            <Route path="teacher/exam-results/:sessionId" element={<TeacherExamResultDetailPage />} />
+            <Route path="teacher/reevaluation/:requestId" element={<TeacherReevaluationRescorePage />} />
+            <Route path="teacher/reevaluation" element={<TeacherReevaluationPage />} />
+            <Route path="teacher/grading/:assignmentId" element={<TeacherGradingTaskPage />} />
+            <Route path="teacher/grading" element={<TeacherGradingPage />} />
+            <Route path="teacher/blueprints/:blueprintId/versions/new" element={<TeacherCreateBlueprintVersionPage />} />
+            <Route path="teacher/blueprints/:blueprintId/versions/:versionId/edit" element={<TeacherEditBlueprintVersionPage />} />
+            <Route path="teacher/blueprints/:blueprintId/versions/:versionId" element={<TeacherBlueprintVersionDetailPage />} />
+            <Route path="teacher/blueprints/:blueprintId" element={<TeacherBlueprintDetailPage />} />
+            <Route path="teacher/blueprints" element={<TeacherBlueprintsPage />} />
+          </Route>
+        </Route>
+        <Route element={<RequireRole role="STUDENT" />}>
+          <Route element={<StudentLayout />}>
+            <Route path="student/exams" element={<StudentExamsPage />} />
+            <Route path="student/exams/:sessionId/result" element={<StudentExamResultPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,21 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Bell,
   BookOpen,
   ChevronDown,
   ClipboardCheck,
+  CreditCard,
+  DoorOpen,
+  ClipboardList,
   FileQuestion,
+  FileSearch,
   FileSpreadsheet,
+  Gavel,
   GraduationCap,
   Home,
   Layers,
   LogOut,
   Menu,
   MonitorPlay,
+  PenLine,
   Search,
   ShieldCheck,
   UserRound,
-  Users,
+  Presentation,
   X,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
@@ -48,6 +54,11 @@ const navigationItems = [
     to: '/school-admin/monitoring',
   },
   {
+    icon: ClipboardCheck,
+    label: 'Điểm danh ca thi',
+    to: '/school-admin/proctor-attendance',
+  },
+  {
     icon: BookOpen,
     label: 'Quản lý lớp học',
     to: '/school-admin/classes',
@@ -58,19 +69,59 @@ const navigationItems = [
     to: '/school-admin/grades',
   },
   {
+    icon: DoorOpen,
+    label: 'Quản lý phòng học',
+    to: '/school-admin/rooms',
+  },
+  {
     icon: FileSpreadsheet,
     label: 'Quản lý import',
     to: '/school-admin/imports',
   },
   {
-    icon: Users,
-    label: 'Quản lý Người dùng',
+    icon: GraduationCap,
+    label: 'Quản lý Học sinh',
     to: '/school-admin/students',
   },
   {
     icon: GraduationCap,
     label: 'Khung năng lực',
     to: '/school-admin/frameworks',
+  },
+  {
+    icon: Presentation,
+    label: 'Quản lý Giáo viên',
+    to: '/school-admin/teachers',
+  },
+  {
+    icon: PenLine,
+    label: 'Phân công chấm bài',
+    to: '/school-admin/grading',
+  },
+  {
+    icon: FileSearch,
+    label: 'Phúc khảo',
+    to: '/school-admin/reevaluation',
+  },
+  {
+    icon: ClipboardList,
+    label: 'Quản lý tiêu chí đánh giá',
+    to: '/school-admin/rubrics',
+  },
+  {
+    icon: ClipboardCheck,
+    label: 'Quản lý chính sách đánh giá',
+    to: '/school-admin/assessment-policies',
+  },
+  {
+    icon: Gavel,
+    label: 'Quản lý Quy tắc tính điểm',
+    to: '/school-admin/scoring-rules',
+  },
+  {
+    icon: CreditCard,
+    label: 'Gói dịch vụ',
+    to: '/school-admin/subscription',
   },
 ]
 
@@ -145,12 +196,12 @@ function SchoolAdminNavigationGroup({
   const location = useLocation()
   const isGroupActive = items.some(({ to }) => location.pathname.startsWith(to))
   const [isOpen, setIsOpen] = useState(isGroupActive)
+  const [prevIsGroupActive, setPrevIsGroupActive] = useState(isGroupActive)
 
-  useEffect(() => {
-    if (isGroupActive) {
-      setIsOpen(true)
-    }
-  }, [isGroupActive])
+  if (isGroupActive !== prevIsGroupActive) {
+    setPrevIsGroupActive(isGroupActive)
+    setIsOpen(isGroupActive)
+  }
 
   return (
     <div className="grid gap-2">

@@ -37,10 +37,17 @@ export type QuestionAssetDto = {
   durationSeconds: number | null
   altText: string | null
   type: QuestionAssetType
-  url: string
+  url: string | null
   transcript: string | null
   description: string | null
+  transcriptManuallyEdited: boolean
+  descriptionManuallyEdited: boolean
   order: number
+}
+
+export type QuestionAssetUploadUrlDto = {
+  uploadUrl: string
+  publicUrl: string
 }
 
 export type QuestionEvaluationGuideDto = {
@@ -118,6 +125,7 @@ export type QuestionDto = {
   updatedAt: string | null
   createdBy: string | null
   updatedBy: string | null
+  usableInExam?: boolean
   topic?: QuestionTopicRefDto | null
   bank?: QuestionBankRefDto | null
   assets?: QuestionAssetDto[] | null
@@ -198,7 +206,7 @@ export type CreateQuestionAssetRequest = {
   durationSeconds?: number | null
   altText?: string | null
   type: QuestionAssetType
-  url: string
+  url: string | null
   transcript?: string | null
   description?: string | null
   order: number
@@ -235,6 +243,20 @@ export type UpdateQuestionStatusRequest = {
     | 'LOCK'
     | 'UNLOCK'
   note?: string | null
+}
+
+export type BulkUpdateQuestionStatusRequest = {
+  questionIds: string[]
+} & UpdateQuestionStatusRequest
+
+export type BulkUpdateQuestionStatusFailure = {
+  questionId: string
+  reason: string
+}
+
+export type BulkUpdateQuestionStatusResponse = {
+  updated: QuestionDto[]
+  failed: BulkUpdateQuestionStatusFailure[]
 }
 
 export type CreateQuestionCollaboratorRequest = {
@@ -357,6 +379,21 @@ export function getQuestionTypeDisplay(type?: QuestionType | null) {
   }
 
   return type ? map[type] ?? type : '-'
+}
+
+export function getQuestionAssetTypeDisplay(type?: QuestionAssetType | null) {
+  switch (type) {
+    case 'IMAGE':
+      return 'Ảnh'
+    case 'VIDEO':
+      return 'Video'
+    case 'TEXT_PASSAGE':
+      return 'Đoạn văn'
+    case 'AUDIO':
+      return 'Âm thanh'
+    default:
+      return String(type ?? '-')
+  }
 }
 
 export function getQuestionStatusDisplay(status?: QuestionStatus | null) {

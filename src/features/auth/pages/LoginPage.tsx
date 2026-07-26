@@ -97,6 +97,10 @@ function getPostLoginPath(roles: string[]) {
     return '/teacher/dashboard'
   }
 
+  if (roles.includes('STUDENT')) {
+    return '/student/exams'
+  }
+
   return null
 }
 
@@ -107,13 +111,13 @@ export function LoginPage() {
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [message, setMessage] = useState<LoginMessage | null>(null)
-
   const location = useLocation()
+  const [message, setMessage] = useState<LoginMessage | null>(
+    () => (location.state as { message?: LoginMessage } | null)?.message ?? null,
+  )
+
   useEffect(() => {
-    const incoming = (location.state as { message?: LoginMessage } | null)?.message
-    if (incoming) {
-      setMessage(incoming)
+    if ((location.state as { message?: LoginMessage } | null)?.message) {
       navigate(location.pathname, { replace: true, state: null })
     }
   }, [location, navigate])

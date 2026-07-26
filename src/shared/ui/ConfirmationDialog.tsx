@@ -1,5 +1,4 @@
 import { Check, CircleHelp, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 
 type ConfirmationDialogProps = {
   cancelLabel?: string
@@ -8,36 +7,27 @@ type ConfirmationDialogProps = {
   message: string
   onCancel: () => void
   onConfirm: () => void
+  onReasonChange?: (value: string) => void
+  reasonLabel?: string
+  reasonPlaceholder?: string
+  reasonValue?: string
+  showReasonField?: boolean
   title?: string
-}
-
-type ConfirmOptions = {
-  cancelLabel?: string
-  confirmLabel?: string
-  message: string
-  title?: string
-}
-
-type ConfirmState = ConfirmOptions & {
-  isOpen: boolean
-}
-
-const DEFAULT_STATE: ConfirmState = {
-  cancelLabel: 'No',
-  confirmLabel: 'Yes',
-  isOpen: false,
-  message: '',
-  title: 'Xac nhan thao tac',
 }
 
 export function ConfirmationDialog({
-  cancelLabel = 'No',
-  confirmLabel = 'Yes',
+  cancelLabel = 'Không',
+  confirmLabel = 'Xác nhận',
   isOpen,
   message,
   onCancel,
   onConfirm,
-  title = 'Xac nhan thao tac',
+  onReasonChange,
+  reasonLabel = 'Lý do',
+  reasonPlaceholder = 'Nhập lý do nếu cần...',
+  reasonValue = '',
+  showReasonField = false,
+  title = 'Xác nhận thao tác',
 }: ConfirmationDialogProps) {
   if (!isOpen) {
     return null
@@ -57,19 +47,14 @@ export function ConfirmationDialog({
               <CircleHelp aria-hidden="true" className="size-5" />
             </div>
             <div className="min-w-0">
-              <h2
-                className="text-lg font-black text-blue-950"
-                id="confirmation-dialog-title"
-              >
+              <h2 className="text-lg font-black text-blue-950" id="confirmation-dialog-title">
                 {title}
               </h2>
-              <p className="mt-1 text-sm font-medium leading-6 text-slate-600">
-                {message}
-              </p>
+              <p className="mt-1 text-sm font-medium leading-6 text-slate-600">{message}</p>
             </div>
           </div>
           <button
-            aria-label="Dong hop thoai"
+            aria-label="Đóng hộp thoại"
             className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"
             onClick={onCancel}
             type="button"
@@ -77,6 +62,20 @@ export function ConfirmationDialog({
             <X aria-hidden="true" className="size-4" />
           </button>
         </div>
+
+        {showReasonField ? (
+          <div className="px-6 pt-5">
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              <span>{reasonLabel}</span>
+              <textarea
+                className="min-h-28 rounded-xl border border-slate-200 px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50"
+                onChange={(event) => onReasonChange?.(event.target.value)}
+                placeholder={reasonPlaceholder}
+                value={reasonValue}
+              />
+            </label>
+          </div>
+        ) : null}
 
         <div className="flex flex-col-reverse gap-3 px-6 py-5 sm:flex-row sm:justify-end">
           <button
@@ -98,51 +97,4 @@ export function ConfirmationDialog({
       </section>
     </div>
   )
-}
-
-export function useConfirmationDialog() {
-  const resolverRef = useRef<((value: boolean) => void) | null>(null)
-  const [state, setState] = useState<ConfirmState>(DEFAULT_STATE)
-
-  useEffect(() => {
-    return () => {
-      resolverRef.current?.(false)
-      resolverRef.current = null
-    }
-  }, [])
-
-  function closeWith(value: boolean) {
-    resolverRef.current?.(value)
-    resolverRef.current = null
-    setState((current) => ({ ...current, isOpen: false }))
-  }
-
-  function confirm(options: ConfirmOptions) {
-    setState({
-      cancelLabel: options.cancelLabel ?? 'No',
-      confirmLabel: options.confirmLabel ?? 'Yes',
-      isOpen: true,
-      message: options.message,
-      title: options.title ?? 'Xac nhan thao tac',
-    })
-
-    return new Promise<boolean>((resolve) => {
-      resolverRef.current = resolve
-    })
-  }
-
-  return {
-    confirm,
-    dialog: (
-      <ConfirmationDialog
-        cancelLabel={state.cancelLabel}
-        confirmLabel={state.confirmLabel}
-        isOpen={state.isOpen}
-        message={state.message}
-        onCancel={() => closeWith(false)}
-        onConfirm={() => closeWith(true)}
-        title={state.title}
-      />
-    ),
-  }
 }

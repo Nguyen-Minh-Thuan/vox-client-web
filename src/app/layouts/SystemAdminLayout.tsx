@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Bell,
   BookOpen,
@@ -6,7 +6,9 @@ import {
   ChevronDown,
   ClipboardCheck,
   ClipboardList,
+  CreditCard,
   FileQuestion,
+  Gavel,
   Home,
   Languages,
   Library,
@@ -80,6 +82,26 @@ const navigationItems: NavigationItem[] = [
     to: '/system-admin/schools',
   },
   {
+    icon: ClipboardList,
+    label: 'Quản lý tiêu chí đánh giá',
+    to: '/system-admin/rubrics',
+  },
+  {
+    icon: ClipboardCheck,
+    label: 'Quản lý chính sách đánh giá',
+    to: '/system-admin/assessment-policies',
+  },
+  {
+    icon: Gavel,
+    label: 'Quản lý Scoring Rules',
+    to: '/system-admin/scoring-rules',
+  },
+  {
+    icon: CreditCard,
+    label: 'Gói dịch vụ',
+    to: '/system-admin/subscription',
+  },
+  {
     icon: Settings,
     label: 'Cài đặt hệ thống',
     to: '/system-admin/settings',
@@ -102,20 +124,6 @@ const navigationGroups: NavigationGroup[] = [
       {
         label: 'Duyệt câu hỏi',
         to: '/system-admin/questions/review',
-      },
-    ],
-  },
-  {
-    icon: ClipboardCheck,
-    label: 'Kỳ thi',
-    items: [
-      {
-        label: 'Giám sát kỳ thi',
-        to: '/system-admin/exams',
-      },
-      {
-        label: 'Giám sát blueprint',
-        to: '/system-admin/blueprints',
       },
     ],
   },
@@ -152,13 +160,8 @@ function SystemAdminNavigationGroup({
 }: NavigationGroup & { onNavigate?: () => void }) {
   const location = useLocation()
   const isGroupActive = items.some(({ to }) => location.pathname.startsWith(to))
-  const [isOpen, setIsOpen] = useState(isGroupActive)
-
-  useEffect(() => {
-    if (isGroupActive) {
-      setIsOpen(true)
-    }
-  }, [isGroupActive])
+  const [manualOpen, setManualOpen] = useState<boolean | null>(null)
+  const isOpen = manualOpen ?? isGroupActive
 
   return (
     <div className="grid gap-2">
@@ -168,7 +171,7 @@ function SystemAdminNavigationGroup({
           'flex min-h-12 w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-bold transition',
           isGroupActive ? 'bg-white/10 text-white' : 'text-indigo-50/90',
         ].join(' ')}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={() => setManualOpen(!isOpen)}
         type="button"
       >
         <Icon aria-hidden="true" className="size-5 shrink-0" />
