@@ -21,8 +21,9 @@ export function ActiveExamsList() {
         page: 1,
         size: 20
     })
-
+    
     const exams = (data?.content ?? []).filter(isExamActiveNow)
+    console.log(exams)
 
     if (isLoading) {
         return <p className={PLACEHOLDER}>Đang tải kỳ thi đang diễn ra…</p>
@@ -34,8 +35,9 @@ export function ActiveExamsList() {
             </p>
         )
     }
-    if (!exams.length) {
-        return <p className={PLACEHOLDER}>Hiện chưa có kỳ thi tập trung nào đang diễn ra.</p>
+    console.log(exams.length == 0)
+    if (exams.length === 0) {
+        return <p className={PLACEHOLDER}>Hiện chưa có kỳ thi nào đang diễn ra.</p>
     }
     return (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
