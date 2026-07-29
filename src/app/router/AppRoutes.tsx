@@ -400,6 +400,9 @@ const TeacherReevaluationRescorePage = lazy(() =>
 const SchoolAdminGradingPage = lazy(() =>
   import("@/features/grading").then((m) => ({ default: m.SchoolAdminGradingPage })),
 );
+const SchoolAdminGradingTaskPage = lazy(() =>
+  import("@/features/grading").then((m) => ({ default: m.SchoolAdminGradingTaskPage })),
+);
 const TeacherGradingPage = lazy(() =>
   import("@/features/grading").then((m) => ({ default: m.TeacherGradingPage })),
 );
@@ -842,6 +845,7 @@ export function AppRoutes() {
             <Route path="school-admin/reevaluation/:requestId" element={<SchoolAdminReevaluationDetailPage />} />
             <Route path="school-admin/reevaluation" element={<SchoolAdminReevaluationPage />} />
             <Route path="school-admin/grading" element={<SchoolAdminGradingPage />} />
+            <Route path="school-admin/grading/:candidateResultId" element={<SchoolAdminGradingTaskPage />} />
             <Route path="school-admin/blueprints/:blueprintId/versions/new" element={<SchoolAdminCreateBlueprintVersionPage />} />
             <Route
               path="school-admin/blueprints/:blueprintId/versions/:versionId/edit"
