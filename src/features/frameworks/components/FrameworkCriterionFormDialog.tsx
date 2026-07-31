@@ -3,6 +3,14 @@ import { useState } from 'react'
 import { Check, X } from 'lucide-react'
 import type { FrameworkCriterionInput } from '../types'
 
+const CRITERION_CODE_OPTIONS = [
+  'Pronunciation',
+  'Fluency',
+  'Grammar',
+  'Vocabulary',
+  'Coherence',
+] as const
+
 type FrameworkCriterionFormDialogProps = {
   errorMessage?: string
   initialValues?: FrameworkCriterionInput
@@ -21,7 +29,11 @@ export function FrameworkCriterionFormDialog({
   onSubmit,
 }: FrameworkCriterionFormDialogProps) {
   const isEditMode = Boolean(initialValues)
-  const [code, setCode] = useState(initialValues?.code ?? '')
+  const [code, setCode] = useState<(typeof CRITERION_CODE_OPTIONS)[number]>(
+    CRITERION_CODE_OPTIONS.find(
+      (option) => option.toUpperCase() === initialValues?.code?.toUpperCase(),
+    ) ?? CRITERION_CODE_OPTIONS[0],
+  )
   const [name, setName] = useState(initialValues?.name ?? '')
   const [description, setDescription] = useState(
     initialValues?.description ?? '',
@@ -54,7 +66,7 @@ export function FrameworkCriterionFormDialog({
     }
 
     onSubmit({
-      code: code.trim(),
+      code: code.trim().toUpperCase(),
       description: description.trim() || null,
       name: name.trim(),
       order,
@@ -91,7 +103,7 @@ export function FrameworkCriterionFormDialog({
           <form className="grid gap-5" onSubmit={handleSubmit}>
             <label className="grid gap-2 text-sm font-bold text-blue-950">
               <span className="whitespace-nowrap">Mã <span className="text-red-500">*</span></span>
-              <input
+              <select
                 autoFocus
                 className={`h-11 rounded-lg border px-3 text-sm font-medium text-blue-950 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50 ${fieldErrors.code ? 'border-red-500' : 'border-slate-200'}`}
                 disabled={isSubmitting}
@@ -101,7 +113,13 @@ export function FrameworkCriterionFormDialog({
                 }}
                 required
                 value={code}
-              />
+              >
+                {CRITERION_CODE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
               {fieldErrors.code ? (
                 <p className="text-xs font-semibold text-red-600">
                   {fieldErrors.code}

@@ -148,7 +148,7 @@ function FrameworksPage({ basePath }: { basePath: string }) {
       const result = await createMutation.mutateAsync({ payload })
 
       if (isActive) {
-        await activateMutation.mutateAsync({ id: result.data.frameworkId })
+        await activateMutation.mutateAsync({ id: result.data })
       }
 
       await queryClient.invalidateQueries({ queryKey: frameworkQueryKeys.all })
