@@ -23,6 +23,7 @@ import {
 import { FrameworkCriteriaSection } from '../components/FrameworkCriteriaSection'
 import { FrameworkCriterionBandFormDialog } from '../components/FrameworkCriterionBandFormDialog'
 import { FrameworkCriterionFormDialog } from '../components/FrameworkCriterionFormDialog'
+import { FrameworkDeleteConfirmDialog } from '../components/FrameworkDeleteConfirmDialog'
 import { FrameworkResultBandFormDialog } from '../components/FrameworkResultBandFormDialog'
 import { FrameworkResultBandsSection } from '../components/FrameworkResultBandsSection'
 import { FrameworkVersionEditFormDialog } from '../components/FrameworkVersionEditFormDialog'
@@ -42,6 +43,15 @@ import type {
 import { formatFrameworkDate, formatNullableText } from '../types'
 
 type FrameworkCriterionBand = FrameworkCriterion['bands'][number]
+
+type PendingDelete =
+  | { criterion: FrameworkCriterion; kind: 'criterion' }
+  | {
+      band: FrameworkCriterionBand
+      criterion: FrameworkCriterion
+      kind: 'criterionBand'
+    }
+  | { band: FrameworkResultBand; kind: 'resultBand' }
 
 function toSignalInputs(signals: FrameworkSignal[]): FrameworkSignalInput[] {
   return signals.map((signal) => ({
@@ -109,6 +119,17 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
     useState<FrameworkResultBand | null>(null)
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false)
   const [publishError, setPublishError] = useState<string>()
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
+    null,
+  )
+  const isDeletingPending =
+    pendingDelete?.kind === 'criterion'
+      ? deleteCriterionMutation.isPending
+      : pendingDelete?.kind === 'criterionBand'
+        ? deleteCriterionBandMutation.isPending
+        : pendingDelete?.kind === 'resultBand'
+          ? deleteResultBandMutation.isPending
+          : false
   const [statusMessage, setStatusMessage] = useState<{
     text: string
     tone: 'error' | 'success'
@@ -256,22 +277,7 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
   }
 
   function handleDeleteCriterion(criterion: FrameworkCriterion) {
-    if (!frameworkId || !versionId) {
-      return
-    }
-
-    if (
-      !window.confirm(
-        'Xóa tiêu chí của khung đánh giá năng lực này? Các mức đánh giá thuộc tiêu chí cũng sẽ bị xóa.',
-      )
-    ) {
-      return
-    }
-
-    deleteCriterionMutation.mutate(
-      { criterionId: criterion.id, frameworkId, versionId },
-      { onSuccess: invalidateVersion },
-    )
+    setPendingDelete({ criterion, kind: 'criterion' })
   }
 
   function handleAddCriterionBand(payload: FrameworkCriterionBandInput) {
@@ -327,23 +333,7 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
     criterion: FrameworkCriterion,
     band: FrameworkCriterionBand,
   ) {
-    if (!frameworkId || !versionId) {
-      return
-    }
-
-    if (!window.confirm('Xóa mức đánh giá của khung đánh giá năng lực này?')) {
-      return
-    }
-
-    deleteCriterionBandMutation.mutate(
-      {
-        bandId: band.id,
-        criterionId: criterion.id,
-        frameworkId,
-        versionId,
-      },
-      { onSuccess: invalidateVersion },
-    )
+    setPendingDelete({ band, criterion, kind: 'criterionBand' })
   }
 
   function handleAddResultBand(payload: FrameworkResultBandInput) {
@@ -381,17 +371,61 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
   }
 
   function handleDeleteResultBand(band: FrameworkResultBand) {
-    if (!frameworkId || !versionId) {
+    setPendingDelete({ band, kind: 'resultBand' })
+  }
+
+  function closePendingDelete() {
+    if (isDeletingPending) {
       return
     }
 
-    if (!window.confirm('Xóa thang kết quả của khung đánh giá năng lực này?')) {
+    setPendingDelete(null)
+  }
+
+  function confirmPendingDelete() {
+    if (!pendingDelete || !frameworkId || !versionId) {
+      return
+    }
+
+    if (pendingDelete.kind === 'criterion') {
+      deleteCriterionMutation.mutate(
+        { criterionId: pendingDelete.criterion.id, frameworkId, versionId },
+        {
+          onSuccess: () => {
+            invalidateVersion()
+            setPendingDelete(null)
+          },
+        },
+      )
+      return
+    }
+
+    if (pendingDelete.kind === 'criterionBand') {
+      deleteCriterionBandMutation.mutate(
+        {
+          bandId: pendingDelete.band.id,
+          criterionId: pendingDelete.criterion.id,
+          frameworkId,
+          versionId,
+        },
+        {
+          onSuccess: () => {
+            invalidateVersion()
+            setPendingDelete(null)
+          },
+        },
+      )
       return
     }
 
     deleteResultBandMutation.mutate(
-      { bandId: band.id, frameworkId, versionId },
-      { onSuccess: invalidateVersion },
+      { bandId: pendingDelete.band.id, frameworkId, versionId },
+      {
+        onSuccess: () => {
+          invalidateVersion()
+          setPendingDelete(null)
+        },
+      },
     )
   }
 
@@ -507,6 +541,28 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
         onConfirm={() => void handlePublishVersion()}
         version={isPublishDialogOpen ? (version ?? null) : null}
       />
+
+      {pendingDelete ? (
+        <FrameworkDeleteConfirmDialog
+          isSubmitting={isDeletingPending}
+          message={
+            pendingDelete.kind === 'criterion'
+              ? 'Tiêu chí này sẽ bị xóa. Các mức đánh giá thuộc tiêu chí cũng sẽ bị xóa. Hành động này không thể hoàn tác.'
+              : pendingDelete.kind === 'criterionBand'
+                ? 'Mức đánh giá này sẽ bị xóa khỏi tiêu chí. Hành động này không thể hoàn tác.'
+                : 'Thang kết quả này sẽ bị xóa. Hành động này không thể hoàn tác.'
+          }
+          onClose={closePendingDelete}
+          onConfirm={confirmPendingDelete}
+          title={
+            pendingDelete.kind === 'criterion'
+              ? 'Xóa tiêu chí'
+              : pendingDelete.kind === 'criterionBand'
+                ? 'Xóa mức đánh giá'
+                : 'Xóa thang kết quả'
+          }
+        />
+      ) : null}
 
       {isEditingVersion && version ? (
         <FrameworkVersionEditFormDialog
