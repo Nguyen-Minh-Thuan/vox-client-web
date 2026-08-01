@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type {
   FrameworkCriterionBandInput,
   FrameworkResultBand,
@@ -72,28 +72,17 @@ export function FrameworkCriterionBandFormDialog({
         className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
         role="dialog"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-          <div className="min-w-0">
-            <h2
-              className="text-lg font-black text-blue-950"
-              id="framework-criterion-band-form-title"
-            >
-              {isEditMode ? 'Sửa mức đánh giá' : 'Thêm mức đánh giá'}
-            </h2>
-            <p className="mt-1 text-sm font-medium text-slate-500">
-              {isEditMode ? 'Cập nhật' : 'Thêm'} mức đánh giá cho tiêu chí{' '}
-              {criterionCode}.
-            </p>
-          </div>
-          <button
-            aria-label="Đóng biểu mẫu mức đánh giá"
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isSubmitting}
-            onClick={onClose}
-            type="button"
+        <header className="border-b border-slate-200 px-6 py-5">
+          <h2
+            className="text-lg font-black text-blue-950"
+            id="framework-criterion-band-form-title"
           >
-            <X aria-hidden="true" className="size-4" />
-          </button>
+            {isEditMode ? 'Sửa mức đánh giá' : 'Thêm mức đánh giá'}
+          </h2>
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            {isEditMode ? 'Cập nhật' : 'Thêm'} mức đánh giá cho tiêu chí{' '}
+            {criterionCode}.
+          </p>
         </header>
 
         <div className="min-h-0 overflow-y-auto px-6 py-5">

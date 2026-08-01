@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { UpdateFrameworkVersionRequest } from '../types'
 
 type FrameworkVersionEditFormDialogProps = {
@@ -12,7 +12,7 @@ type FrameworkVersionEditFormDialogProps = {
   onSubmit: (payload: UpdateFrameworkVersionRequest) => void
 }
 
-function toDateInputValue(value?: string | null) {
+function toDateTimeInputValue(value?: string | null) {
   if (!value) {
     return ''
   }
@@ -23,7 +23,9 @@ function toDateInputValue(value?: string | null) {
     return ''
   }
 
-  return date.toISOString().slice(0, 10)
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 export function FrameworkVersionEditFormDialog({
@@ -40,10 +42,10 @@ export function FrameworkVersionEditFormDialog({
     initialValues.description ?? '',
   )
   const [effectiveFrom, setEffectiveFrom] = useState(
-    toDateInputValue(initialValues.effectiveFrom),
+    toDateTimeInputValue(initialValues.effectiveFrom),
   )
   const [effectiveTo, setEffectiveTo] = useState(
-    toDateInputValue(initialValues.effectiveTo),
+    toDateTimeInputValue(initialValues.effectiveTo),
   )
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<'code' | 'effectiveFrom' | 'effectiveTo' | 'name', string>>
@@ -100,22 +102,13 @@ export function FrameworkVersionEditFormDialog({
         className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
         role="dialog"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+        <header className="border-b border-slate-200 px-6 py-5">
           <h2
             className="text-lg font-black text-blue-950"
             id="framework-version-edit-form-title"
           >
             Sửa phiên bản
           </h2>
-          <button
-            aria-label="Đóng biểu mẫu phiên bản"
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isSubmitting}
-            onClick={onClose}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
         </header>
 
         <div className="min-h-0 overflow-y-auto px-6 py-5">
@@ -173,7 +166,7 @@ export function FrameworkVersionEditFormDialog({
             </label>
 
             <label className="grid gap-2 text-sm font-bold text-blue-950">
-              <span className="whitespace-nowrap">Ngày hiệu lực bắt đầu <span className="text-red-500">*</span></span>
+              <span className="whitespace-nowrap">Thời điểm hiệu lực bắt đầu <span className="text-red-500">*</span></span>
               <input
                 className={`h-11 rounded-lg border px-3 text-sm font-medium text-blue-950 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50 ${fieldErrors.effectiveFrom ? 'border-red-500' : 'border-slate-200'}`}
                 disabled={isSubmitting}
@@ -185,7 +178,7 @@ export function FrameworkVersionEditFormDialog({
                   }))
                 }}
                 required
-                type="date"
+                type="datetime-local"
                 value={effectiveFrom}
               />
               {fieldErrors.effectiveFrom ? (
@@ -196,7 +189,7 @@ export function FrameworkVersionEditFormDialog({
             </label>
 
             <label className="grid gap-2 text-sm font-bold text-blue-950">
-              Ngày hiệu lực kết thúc
+              Thời điểm hiệu lực kết thúc
               <input
                 className={`h-11 rounded-lg border px-3 text-sm font-medium text-blue-950 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50 ${fieldErrors.effectiveTo ? 'border-red-500' : 'border-slate-200'}`}
                 disabled={isSubmitting}
@@ -207,7 +200,7 @@ export function FrameworkVersionEditFormDialog({
                     effectiveTo: undefined,
                   }))
                 }}
-                type="date"
+                type="datetime-local"
                 value={effectiveTo}
               />
               {fieldErrors.effectiveTo ? (

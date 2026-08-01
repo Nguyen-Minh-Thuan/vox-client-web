@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type { FrameworkResultBandInput } from '../types'
 
 type FrameworkResultBandFormDialogProps = {
@@ -69,22 +69,13 @@ export function FrameworkResultBandFormDialog({
         className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
         role="dialog"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+        <header className="border-b border-slate-200 px-6 py-5">
           <h2
             className="text-lg font-black text-blue-950"
             id="framework-result-band-form-title"
           >
             {isEditMode ? 'Sửa thang kết quả' : 'Thêm thang kết quả'}
           </h2>
-          <button
-            aria-label="Đóng biểu mẫu thang kết quả"
-            className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isSubmitting}
-            onClick={onClose}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
         </header>
 
         <div className="min-h-0 overflow-y-auto px-6 py-5">
