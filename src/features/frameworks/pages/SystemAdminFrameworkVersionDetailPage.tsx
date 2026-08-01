@@ -193,7 +193,7 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
       setStatusMessage({
         text:
           getErrorMessage(error) ??
-          'Không thể lưu trữ phiên bản. Vui lòng thử lại.',
+          'Không thể lưu trữ phiên bản khung đánh giá năng lực. Vui lòng thử lại.',
         tone: 'error',
       })
     }
@@ -262,7 +262,7 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
 
     if (
       !window.confirm(
-        'Xóa tiêu chí này? Các mức đánh giá thuộc tiêu chí cũng sẽ bị xóa.',
+        'Xóa tiêu chí của khung đánh giá năng lực này? Các mức đánh giá thuộc tiêu chí cũng sẽ bị xóa.',
       )
     ) {
       return
@@ -331,7 +331,7 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
       return
     }
 
-    if (!window.confirm('Xóa mức đánh giá này?')) {
+    if (!window.confirm('Xóa mức đánh giá của khung đánh giá năng lực này?')) {
       return
     }
 
@@ -385,7 +385,7 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
       return
     }
 
-    if (!window.confirm('Xóa thang kết quả này?')) {
+    if (!window.confirm('Xóa thang kết quả của khung đánh giá năng lực này?')) {
       return
     }
 
@@ -403,7 +403,7 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
           to={`${basePath}/frameworks/${frameworkId}`}
         >
           <ChevronLeft aria-hidden="true" className="size-4" />
-          Chi tiết framework
+          Chi tiết khung đánh giá năng lực
         </Link>
       </div>
 
@@ -486,7 +486,7 @@ function FrameworkVersionDetailPage({ basePath }: { basePath: string }) {
                   type="button"
                 >
                   <Pencil aria-hidden="true" className="size-4" />
-                  Chỉnh sửa phiên bản
+                  Chỉnh sửa phiên bản khung đánh giá năng lực
                 </button>
               ) : null}
             </div>

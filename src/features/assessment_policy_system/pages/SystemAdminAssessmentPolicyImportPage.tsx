@@ -32,7 +32,6 @@ const IMPORT_FIELDS: ImportField[] = [
   { isRequired: true, label: 'Phiên bản khung', value: 'frameworkVersion' },
   { isRequired: true, label: 'Phiên bản rubric', value: 'rubricVersion' },
   { isRequired: true, label: 'Band mục tiêu', value: 'targetFrameworkBand' },
-  { isRequired: true, label: 'Band tối thiểu', value: 'minimumFrameworkBand' },
   { isRequired: false, label: 'Điểm đạt', value: 'passingScore' },
   { isRequired: false, label: 'Mức độ nghiêm ngặt', value: 'strictness' },
   { isRequired: true, label: 'Ngày bắt đầu', value: 'effectiveFrom' },
@@ -249,7 +248,7 @@ export function SystemAdminAssessmentPolicyImportPage() {
       });
     } catch (error) {
       setMessage({
-        text: getErrorMessage(error) ?? 'Không thể xác nhận import Assessment Policy. Vui lòng thử lại.',
+        text: getErrorMessage(error) ?? 'Không thể xác nhận import Chính Sách Đánh Giá. Vui lòng thử lại.',
         tone: 'error',
       });
     }
@@ -268,16 +267,16 @@ export function SystemAdminAssessmentPolicyImportPage() {
         <div>
           <nav aria-label="Đường dẫn" className="flex items-center gap-2 text-sm font-bold text-slate-500">
             <Link className="transition hover:text-indigo-600" to={backToListUrl}>
-              Quản lý Assessment Policy
+              Quản lý Chính Sách Đánh Giá
             </Link>
             <span aria-hidden="true" className="text-slate-300">/</span>
             <span className="text-slate-950">Import hàng loạt</span>
           </nav>
           <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950" id="system-assessment-policy-import-title">
-            Import Assessment Policy hàng loạt
+            Import Chính Sách Đánh Giá hàng loạt
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-7 text-slate-500">
-            Tải lên file CSV hoặc Excel, kiểm tra mapping cột và xác nhận import các Assessment Policy hệ thống mới.
+            Tải lên file CSV hoặc Excel, kiểm tra mapping cột và xác nhận import các Chính Sách Đánh Giá hệ thống mới.
           </p>
         </div>
         <Link

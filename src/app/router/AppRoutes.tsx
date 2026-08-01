@@ -549,12 +549,6 @@ const SchoolAdminRubricResultBandImportPage = lazy(() =>
   })),
 );
 
-const SchoolAdminRubricCriterionBandImportPage = lazy(() =>
-  import("@/features/rubrics_school").then((module) => ({
-    default: module.SchoolAdminRubricCriterionBandImportPage,
-  })),
-);
-
 const SystemAdminRubricsPage = lazy(() =>
   import("@/features/rubric_system").then((module) => ({
     default: module.SystemAdminRubricsPage,
@@ -609,12 +603,6 @@ const SystemAdminRubricCriterionImportPage = lazy(() =>
   })),
 );
 
-const SystemAdminRubricCriterionBandImportPage = lazy(() =>
-  import("@/features/rubric_system").then((module) => ({
-    default: module.SystemAdminRubricCriterionBandImportPage,
-  })),
-);
-
 const SchoolAdminAssessmentPoliciesPage = lazy(() =>
   import("@/features/assessment_policy_school").then((module) => ({
     default: module.SchoolAdminAssessmentPoliciesPage,
@@ -639,9 +627,9 @@ const SchoolAdminScoringRulesPage = lazy(() =>
   })),
 );
 
-const SchoolAdminScoringRulePoliciesPage = lazy(() =>
+const SchoolAdminAllScoringRulesPage = lazy(() =>
   import("@/features/scoring_rules_school").then((module) => ({
-    default: module.SchoolAdminScoringRulePoliciesPage,
+    default: module.SchoolAdminAllScoringRulesPage,
   })),
 );
 
@@ -651,15 +639,21 @@ const SystemAdminScoringRulesPage = lazy(() =>
   })),
 );
 
-const SystemAdminScoringRulePoliciesPage = lazy(() =>
+const SystemAdminAllScoringRulesPage = lazy(() =>
   import("@/features/scoring_rules_system").then((module) => ({
-    default: module.SystemAdminScoringRulePoliciesPage,
+    default: module.SystemAdminAllScoringRulesPage,
   })),
 );
 
 const SystemAdminSubscriptionPage = lazy(() =>
   import("@/features/subscription_system").then((module) => ({
     default: module.SystemAdminSubscriptionPage,
+  })),
+);
+
+const SystemAdminSubscriptionPaymentResultPage = lazy(() =>
+  import("@/features/subscription_school").then((module) => ({
+    default: module.PaymentResultPage,
   })),
 );
 
@@ -772,10 +766,6 @@ export function AppRoutes() {
               element={<SystemAdminRubricCriterionDetailPage />}
             />
             <Route
-              path="system-admin/rubrics/:rubricId/versions/:versionId/criteria/:criterionId/bands/import"
-              element={<SystemAdminRubricCriterionBandImportPage />}
-            />
-            <Route
               path="system-admin/assessment-policies"
               element={<SystemAdminAssessmentPoliciesPage />}
             />
@@ -793,11 +783,15 @@ export function AppRoutes() {
             />
             <Route
               path="system-admin/scoring-rules"
-              element={<SystemAdminScoringRulePoliciesPage />}
+              element={<SystemAdminAllScoringRulesPage />}
             />
             <Route
               path="system-admin/subscription"
               element={<SystemAdminSubscriptionPage />}
+            />
+            <Route
+              path="system-admin/subscription/payment-result"
+              element={<SystemAdminSubscriptionPaymentResultPage backTo="/system-admin/subscription" />}
             />
           </Route>
         </Route>
@@ -963,10 +957,6 @@ export function AppRoutes() {
               element={<SchoolAdminRubricCriterionDetailPage />}
             />
             <Route
-              path="school-admin/rubrics/:rubricId/versions/:versionId/criteria/:criterionId/bands/import"
-              element={<SchoolAdminRubricCriterionBandImportPage />}
-            />
-            <Route
               path="school-admin/assessment-policies"
               element={<SchoolAdminAssessmentPoliciesPage />}
             />
@@ -984,7 +974,7 @@ export function AppRoutes() {
             />
             <Route
               path="school-admin/scoring-rules"
-              element={<SchoolAdminScoringRulePoliciesPage />}
+              element={<SchoolAdminAllScoringRulesPage />}
             />
             <Route
               path="school-admin/subscription"
