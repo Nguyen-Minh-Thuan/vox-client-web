@@ -16,21 +16,19 @@ type FrameworkFormDialogProps = {
   isSubmitting: boolean
   mode: FrameworkFormMode
   onClose: () => void
-  onCreate: (payload: CreateFrameworkRequest, isActive: boolean) => void
+  onCreate: (payload: CreateFrameworkRequest) => void
   onUpdate: (id: string, payload: UpdateFrameworkRequest) => void
 }
 
 type FormState = {
   code: string
   description: string
-  isActive: boolean
   name: string
 }
 
 const emptyForm: FormState = {
   code: '',
   description: '',
-  isActive: false,
   name: '',
 }
 
@@ -42,7 +40,6 @@ function createFormState(framework: Framework | null): FormState {
   return {
     code: '',
     description: framework.description ?? '',
-    isActive: framework.isActive,
     name: framework.name,
   }
 }
@@ -51,7 +48,6 @@ function trimFormState(state: FormState): FormState {
   return {
     code: state.code.trim().toUpperCase(),
     description: state.description.trim(),
-    isActive: state.isActive,
     name: state.name.trim(),
   }
 }
@@ -137,10 +133,7 @@ export function FrameworkFormDialog({
       return
     }
 
-    onCreate(
-      { code: values.code, description, name: values.name },
-      values.isActive,
-    )
+    onCreate({ code: values.code, description, name: values.name })
   }
 
   const title = isEditMode ? 'Cập nhật khung đánh giá năng lực' : 'Tạo khung đánh giá năng lực'
@@ -246,28 +239,6 @@ export function FrameworkFormDialog({
               ) : null}
             </label>
 
-            {!isEditMode ? (
-              <label className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 px-4 py-3">
-                <span className="min-w-0">
-                  <span className="block text-sm font-black text-blue-950">
-                    Đang hoạt động
-                  </span>
-                  <span className="mt-1 block text-xs font-medium text-slate-500">
-                    Khung đánh giá năng lực không hoạt động sẽ không xuất hiện trong đánh giá.
-                  </span>
-                </span>
-                <input
-                  aria-label="Trạng thái đang hoạt động"
-                  checked={form.isActive}
-                  className="size-5 accent-indigo-600"
-                  disabled={isSubmitting}
-                  onChange={(event) =>
-                    updateField('isActive', event.target.checked)
-                  }
-                  type="checkbox"
-                />
-              </label>
-            ) : null}
 
             {errorMessage ? (
               <div
