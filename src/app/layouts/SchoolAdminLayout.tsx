@@ -115,7 +115,7 @@ const navigationItems = [
   },
   {
     icon: Gavel,
-    label: 'Quản lý Quy tắc tính điểm',
+    label: 'Quản lý quy tắc tính điểm',
     to: '/school-admin/scoring-rules',
   },
   {

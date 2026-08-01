@@ -93,7 +93,7 @@ const navigationItems: NavigationItem[] = [
   },
   {
     icon: Gavel,
-    label: 'Quản lý Scoring Rules',
+    label: 'Quản lý quy tắc tính điểm',
     to: '/system-admin/scoring-rules',
   },
   {

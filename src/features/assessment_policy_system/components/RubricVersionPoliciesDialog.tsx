@@ -1,9 +1,9 @@
-// src/features/assessment_policy_school/components/RubricVersionPoliciesDialog.tsx
+// src/features/assessment_policy_system/components/RubricVersionPoliciesDialog.tsx
 
 import { Loader2, Lock, Rocket, X } from 'lucide-react';
-import { useSchoolAssessmentPoliciesQuery } from '../api/useSchoolAssessmentPoliciesQuery';
-import { usePublishSchoolAssessmentPoliciesByRubricVersionMutation } from '../api/usePublishSchoolAssessmentPoliciesByRubricVersionMutation';
-import { usePublishSchoolRubricVersionMutation } from '../api/usePublishSchoolRubricVersionMutation';
+import { useSystemAssessmentPoliciesQuery } from '../api/useSystemAssessmentPoliciesQuery';
+import { usePublishSystemAssessmentPoliciesByRubricVersionMutation } from '../api/usePublishSystemAssessmentPoliciesByRubricVersionMutation';
+import { usePublishSystemRubricVersionMutation } from '../api/usePublishSystemRubricVersionMutation';
 import { formatAssessmentPolicyDate } from '../types';
 
 type RubricVersionSummary = {
@@ -18,7 +18,6 @@ type RubricVersionSummary = {
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  schoolId?: string;
   rubricVersionId?: string;
   rubricVersion?: RubricVersionSummary | null;
 };
@@ -44,11 +43,11 @@ function InfoField({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
-export function RubricVersionPoliciesDialog({ isOpen, onClose, schoolId, rubricVersionId, rubricVersion }: Props) {
+export function RubricVersionPoliciesDialog({ isOpen, onClose, rubricVersionId, rubricVersion }: Props) {
   const filter = { rubricVersionId };
-  const { data, isLoading, isError, refetch } = useSchoolAssessmentPoliciesQuery(schoolId, filter, 1, 100);
-  const { mutateAsync: publishAll, isPending: isPublishingAll } = usePublishSchoolAssessmentPoliciesByRubricVersionMutation(schoolId);
-  const { mutateAsync: publishRubricVersion, isPending: isPublishingRubricVersion } = usePublishSchoolRubricVersionMutation(schoolId);
+  const { data, isLoading, isError, refetch } = useSystemAssessmentPoliciesQuery(filter, 1, 100);
+  const { mutateAsync: publishAll, isPending: isPublishingAll } = usePublishSystemAssessmentPoliciesByRubricVersionMutation();
+  const { mutateAsync: publishRubricVersion, isPending: isPublishingRubricVersion } = usePublishSystemRubricVersionMutation();
 
   if (!isOpen) return null;
 
