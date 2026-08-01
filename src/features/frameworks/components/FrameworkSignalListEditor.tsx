@@ -199,13 +199,21 @@ export function FrameworkSignalListEditor({
           />
           <button
             aria-label={editingIndex !== null ? 'Lưu dấu hiệu' : 'Thêm dấu hiệu'}
-            className="inline-flex size-8 items-center justify-center rounded border border-slate-200 text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            className="inline-flex h-8 items-center justify-center gap-1 rounded border border-slate-200 px-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
             disabled={!canAdd}
             onClick={handleSubmit}
             type="button"
           >
             {editingIndex !== null ? (
+              <>
               <Check aria-hidden="true" className="size-4" />
+                Lưu
+              </>
+            ) : canAdd ? (
+              <>
+                <Plus aria-hidden="true" className="size-4" />
+                Thêm
+              </>
             ) : (
             <Plus aria-hidden="true" className="size-4" />
             )}
