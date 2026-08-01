@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { FrameworkSignalInput, SignalImportance } from '../types'
 
+type SignalPolarity = 'NEGATIVE' | 'POSITIVE'
+
 type FrameworkSignalListEditorProps = {
   disabled?: boolean
-  onChange: (signals: FrameworkSignalInput[]) => void
-  signals: FrameworkSignalInput[]
+  negativeListContainer?: HTMLElement | null
+  negativeSignals: FrameworkSignalInput[]
+  onNegativeChange: (signals: FrameworkSignalInput[]) => void
+  onPositiveChange: (signals: FrameworkSignalInput[]) => void
+  positiveListContainer?: HTMLElement | null
+  positiveSignals: FrameworkSignalInput[]
 }
 
 const emptyForm = {
@@ -13,6 +20,7 @@ const emptyForm = {
   description: '',
   evidenceHint: '',
   importance: 'MEDIUM' as SignalImportance,
+  polarity: 'POSITIVE' as SignalPolarity,
 }
 
 const importanceLabels: Record<SignalImportance, string> = {
@@ -21,14 +29,29 @@ const importanceLabels: Record<SignalImportance, string> = {
   MEDIUM: 'Trung bình',
 }
 
+const polarityLabels: Record<SignalPolarity, string> = {
+  NEGATIVE: 'Tiêu cực',
+  POSITIVE: 'Tích cực',
+}
+
 export function FrameworkSignalListEditor({
   disabled,
-  onChange,
-  signals,
+  negativeListContainer,
+  negativeSignals,
+  onNegativeChange,
+  onPositiveChange,
+  positiveListContainer,
+  positiveSignals,
 }: FrameworkSignalListEditorProps) {
   const [form, setForm] = useState(emptyForm)
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [removeIndex, setRemoveIndex] = useState<number | null>(null)
+  const [editing, setEditing] = useState<{
+    index: number
+    polarity: SignalPolarity
+  } | null>(null)
+  const [removing, setRemoving] = useState<{
+    index: number
+    polarity: SignalPolarity
+  } | null>(null)
   const [status, setStatus] = useState<{
     text: string
     type: 'error' | 'success'
@@ -45,6 +68,14 @@ export function FrameworkSignalListEditor({
 
   const canAdd = Boolean(form.code.trim() && form.description.trim())
 
+  function signalsFor(polarity: SignalPolarity) {
+    return polarity === 'POSITIVE' ? positiveSignals : negativeSignals
+  }
+
+  function onChangeFor(polarity: SignalPolarity) {
+    return polarity === 'POSITIVE' ? onPositiveChange : onNegativeChange
+  }
+
   function handleSubmit() {
     if (!canAdd) {
       setStatus({
@@ -54,18 +85,22 @@ export function FrameworkSignalListEditor({
       return
     }
 
-    const entry = 
-    {
+    const entry = {
       code: form.code.trim(),
       description: form.description.trim(),
       evidenceHint: form.evidenceHint.trim() || null,
       importance: form.importance,
     }
 
-    if (editingIndex !== null) {
-      onChange(signals.map((s, i) => (i === editingIndex ? entry : s)))
+    const signals = signalsFor(form.polarity)
+    const onChange = onChangeFor(form.polarity)
+
+    if (editing && editing.polarity === form.polarity) {
+      onChange(
+        signals.map((s, i) => (i === editing.index ? entry : s)),
+      )
       setStatus({ text: `Đã cập nhật dấu hiệu "${entry.code}".`, type: 'success' })
-      setEditingIndex(null)
+      setEditing(null)
     } else {
       onChange([...signals, entry])
       setStatus({ text: `Đã thêm dấu hiệu "${entry.code}".`, type: 'success' })
@@ -74,93 +109,145 @@ export function FrameworkSignalListEditor({
     setForm(emptyForm)
   }
 
-  function handleEdit(index: number) {
-    const signal = signals[index]
+  function handleEdit(polarity: SignalPolarity, index: number) {
+    const signal = signalsFor(polarity)[index]
     setForm({
       code: signal.code,
       description: signal.description,
       evidenceHint: signal.evidenceHint ?? '',
       importance: signal.importance,
+      polarity,
     })
-    setEditingIndex(index)
+    setEditing({ index, polarity })
     setStatus(null)
   }
 
   function handleCancelEdit() {
     setForm(emptyForm)
-    setEditingIndex(null)
+    setEditing(null)
   }
 
-  function handleRemove(index: number) {
-    onChange(signals.filter((_, i) => i !== index))
+  function handleRemove(polarity: SignalPolarity, index: number) {
+    const signals = signalsFor(polarity)
+    onChangeFor(polarity)(signals.filter((_, i) => i !== index))
     setStatus({ text: `Đã xóa dấu hiệu "${signals[index].code}".`, type: 'success' })
-    setRemoveIndex(null)
+    setRemoving(null)
 
-    if (editingIndex === index) {
+    if (editing && editing.polarity === polarity && editing.index === index) {
       handleCancelEdit()
     }
   }
 
+  function renderList(polarity: SignalPolarity, signals: FrameworkSignalInput[]) {
+    return (
+      <>
+        {signals.length === 0 ? (
+          <p className="text-xs font-medium text-slate-400">Chưa có dấu hiệu nào.</p>
+        ) : null}
+        <div className="grid gap-1.5">
+          {signals.map((signal, index) => {
+            const isEditing =
+              editing?.polarity === polarity && editing.index === index
+
+            return (
+              <div
+                className={`grid gap-1 rounded-lg border px-2.5 py-2 text-xs text-slate-700 ${isEditing ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-slate-50'}`}
+                key={`${signal.code}-${index}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-bold text-blue-950">{signal.code}</span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                      {importanceLabels[signal.importance]}
+                    </span>
+                    {!disabled ? (
+                      <button
+                        aria-label={`Sửa dấu hiệu ${signal.code}`}
+                        className="text-slate-400 hover:text-indigo-600"
+                        onClick={() => handleEdit(polarity, index)}
+                        type="button"
+                      >
+                        <Pencil aria-hidden="true" className="size-3" />
+                      </button>
+                    ) : null}
+                    {!disabled ? (
+                      <button
+                        aria-label={`Xóa dấu hiệu ${signal.code}`}
+                        className="text-slate-400 hover:text-red-600"
+                        onClick={() => setRemoving({ index, polarity })}
+                        type="button"
+                      >
+                        <X aria-hidden="true" className="size-3" />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                <p className="font-medium">{signal.description}</p>
+                {signal.evidenceHint ? (
+                  <p className="text-slate-500">Gợi ý minh chứng: {signal.evidenceHint}</p>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+      </>
+    )
+  }
+
+  const positiveList = renderList('POSITIVE', positiveSignals)
+  const negativeList = renderList('NEGATIVE', negativeSignals)
+  const removingSignal = removing ? signalsFor(removing.polarity)[removing.index] : null
+
   return (
     <div className="grid gap-2">
-      {signals.length === 0 ? (
-        <p className="text-xs font-medium text-slate-400">Chưa có dấu hiệu nào.</p>
-      ) : null}
-      <div className="grid gap-1.5 sm:grid-cols-2">
-        {signals.map((signal, index) => (
-          <div
-            className={`grid gap-1 rounded-lg border px-2.5 py-2 text-xs text-slate-700 ${index === editingIndex ? 'border-indigo-400 bg-indigo-50' : 'border-slate-200 bg-slate-50'}`}
-            key={`${signal.code}-${index}`}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <span className="font-bold text-blue-950">{signal.code}</span>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
-                  {importanceLabels[signal.importance]}
-                </span>
-                {!disabled ? (
-                  <button
-                    aria-label={`Sửa dấu hiệu ${signal.code}`}
-                    className="text-slate-400 hover:text-indigo-600"
-                    onClick={() => handleEdit(index)}
-                    type="button"
-                  >
-                    <Pencil aria-hidden="true" className="size-3" />
-                  </button>
-                ) : null}
-            {!disabled ? (
-              <button
-                aria-label={`Xóa dấu hiệu ${signal.code}`}
-                className="text-slate-400 hover:text-red-600"
-                onClick={() => setRemoveIndex(index)}
-                type="button"
-              >
-                <X aria-hidden="true" className="size-3" />
-              </button>
-            ) : null}
-              </div>
-            </div>
-            <p className="font-medium">{signal.description}</p>
-            {signal.evidenceHint ? (
-              <p className="text-slate-500">Gợi ý minh chứng: {signal.evidenceHint}</p>
-            ) : null}
-          </div>
-        ))}
-      </div>
+      {positiveListContainer
+        ? createPortal(positiveList, positiveListContainer)
+        : positiveList}
+      {negativeListContainer
+        ? createPortal(negativeList, negativeListContainer)
+        : negativeList}
 
       {!disabled ? (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <input
-            className="h-8 w-20 rounded border border-slate-200 px-2 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
-            onChange={(event) =>
-              setForm((current) => ({ ...current, code: event.target.value }))
-            }
-            placeholder="Mã"
-            title={form.code}
-            value={form.code}
-          />
-          <input
-            className="h-8 min-w-32 flex-1 rounded border border-slate-200 px-2 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
+        <div className="grid gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <select
+              className="h-8 shrink-0 rounded border border-slate-200 px-1 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  polarity: event.target.value as SignalPolarity,
+                }))
+              }
+              value={form.polarity}
+            >
+              <option value="POSITIVE">{polarityLabels.POSITIVE}</option>
+              <option value="NEGATIVE">{polarityLabels.NEGATIVE}</option>
+            </select>
+            <input
+              className="h-8 min-w-0 flex-1 rounded border border-slate-200 px-2 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
+              onChange={(event) =>
+                setForm((current) => ({ ...current, code: event.target.value }))
+              }
+              placeholder="Mã"
+              value={form.code}
+            />
+            <select
+              className="h-8 shrink-0 rounded border border-slate-200 px-1 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  importance: event.target.value as SignalImportance,
+                }))
+              }
+              value={form.importance}
+            >
+              <option value="HIGH">Cao</option>
+              <option value="MEDIUM">Trung bình</option>
+              <option value="LOW">Thấp</option>
+            </select>
+          </div>
+          <textarea
+            className="min-h-16 rounded border border-slate-200 px-2 py-1.5 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
             onChange={(event) =>
               setForm((current) => ({
                 ...current,
@@ -168,25 +255,11 @@ export function FrameworkSignalListEditor({
               }))
             }
             placeholder="Mô tả"
-            title={form.description}
+            rows={2}
             value={form.description}
           />
-          <select
-            className="h-8 rounded border border-slate-200 px-1 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                importance: event.target.value as SignalImportance,
-              }))
-            }
-            value={form.importance}
-          >
-            <option value="HIGH">Cao</option>
-            <option value="MEDIUM">Trung bình</option>
-            <option value="LOW">Thấp</option>
-          </select>
-          <input
-            className="h-8 min-w-28 flex-1 rounded border border-slate-200 px-2 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
+          <textarea
+            className="min-h-16 rounded border border-slate-200 px-2 py-1.5 text-xs font-medium text-blue-950 outline-none focus:border-indigo-500"
             onChange={(event) =>
               setForm((current) => ({
                 ...current,
@@ -194,40 +267,42 @@ export function FrameworkSignalListEditor({
               }))
             }
             placeholder="Gợi ý minh chứng"
-            title={form.evidenceHint}
+            rows={2}
             value={form.evidenceHint}
           />
-          <button
-            aria-label={editingIndex !== null ? 'Lưu dấu hiệu' : 'Thêm dấu hiệu'}
-            className="inline-flex h-8 items-center justify-center gap-1 rounded border border-slate-200 px-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-            disabled={!canAdd}
-            onClick={handleSubmit}
-            type="button"
-          >
-            {editingIndex !== null ? (
-              <>
-              <Check aria-hidden="true" className="size-4" />
-                Lưu
-              </>
-            ) : canAdd ? (
-              <>
-                <Plus aria-hidden="true" className="size-4" />
-                Thêm
-              </>
-            ) : (
-            <Plus aria-hidden="true" className="size-4" />
-            )}
-          </button>
-          {editingIndex !== null ? (
+          <div className="flex items-center gap-1.5">
             <button
-              aria-label="Hủy sửa dấu hiệu"
-              className="inline-flex size-8 items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-50"
-              onClick={handleCancelEdit}
+              aria-label={editing !== null ? 'Lưu dấu hiệu' : 'Thêm dấu hiệu'}
+              className="inline-flex h-8 items-center justify-center gap-1 rounded border border-slate-200 px-2 text-xs font-bold text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+              disabled={!canAdd}
+              onClick={handleSubmit}
               type="button"
             >
-              <X aria-hidden="true" className="size-4" />
+              {editing !== null ? (
+                <>
+                  <Check aria-hidden="true" className="size-4" />
+                  Lưu
+                </>
+              ) : canAdd ? (
+                <>
+                  <Plus aria-hidden="true" className="size-4" />
+                  Thêm
+                </>
+              ) : (
+                <Plus aria-hidden="true" className="size-4" />
+              )}
             </button>
-          ) : null}
+            {editing !== null ? (
+              <button
+                aria-label="Hủy sửa dấu hiệu"
+                className="inline-flex size-8 items-center justify-center rounded border border-slate-200 text-slate-500 hover:bg-slate-50"
+                onClick={handleCancelEdit}
+                type="button"
+              >
+                <X aria-hidden="true" className="size-4" />
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -243,7 +318,7 @@ export function FrameworkSignalListEditor({
         </p>
       ) : null}
 
-      {removeIndex !== null ? (
+      {removing && removingSignal ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 py-6">
           <section
             aria-labelledby="framework-signal-remove-title"
@@ -258,7 +333,7 @@ export function FrameworkSignalListEditor({
               <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
                 Dấu hiệu{' '}
                 <span className="font-bold text-blue-950">
-                  {signals[removeIndex]?.code}
+                  {removingSignal.code}
                 </span>{' '}
                 sẽ bị xóa khỏi danh sách. Bạn có chắc chắn muốn tiếp tục?
               </p>
@@ -267,14 +342,14 @@ export function FrameworkSignalListEditor({
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-                onClick={() => setRemoveIndex(null)}
+                onClick={() => setRemoving(null)}
                 type="button"
               >
                 Hủy
               </button>
               <button
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 text-sm font-bold text-white transition hover:bg-red-700"
-                onClick={() => handleRemove(removeIndex)}
+                onClick={() => handleRemove(removing.polarity, removing.index)}
                 type="button"
               >
                 <Trash2 aria-hidden="true" className="size-4" />

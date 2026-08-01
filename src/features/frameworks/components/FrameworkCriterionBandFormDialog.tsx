@@ -43,6 +43,10 @@ export function FrameworkCriterionBandFormDialog({
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<'resultBandCode', string>>
   >({})
+  const [positiveListContainer, setPositiveListContainer] =
+    useState<HTMLDivElement | null>(null)
+  const [negativeListContainer, setNegativeListContainer] =
+    useState<HTMLDivElement | null>(null)
 
   if (!isOpen) {
     return null
@@ -65,7 +69,7 @@ export function FrameworkCriterionBandFormDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-start justify-center gap-4 overflow-y-auto bg-slate-950/45 px-4 py-6">
       <section
         aria-labelledby="framework-criterion-band-form-title"
         aria-modal="true"
@@ -134,20 +138,15 @@ export function FrameworkCriterionBandFormDialog({
             </label>
 
             <div className="grid gap-2 text-sm font-bold text-blue-950">
-              Dấu hiệu tích cực
+              Dấu hiệu
               <FrameworkSignalListEditor
                 disabled={isSubmitting}
-                onChange={setPositiveSignals}
-                signals={positiveSignals}
-              />
-            </div>
-
-            <div className="grid gap-2 text-sm font-bold text-blue-950">
-              Dấu hiệu tiêu cực
-              <FrameworkSignalListEditor
-                disabled={isSubmitting}
-                onChange={setNegativeSignals}
-                signals={negativeSignals}
+                negativeListContainer={negativeListContainer}
+                negativeSignals={negativeSignals}
+                onNegativeChange={setNegativeSignals}
+                onPositiveChange={setPositiveSignals}
+                positiveListContainer={positiveListContainer}
+                positiveSignals={positiveSignals}
               />
             </div>
 
@@ -187,6 +186,28 @@ export function FrameworkCriterionBandFormDialog({
           </form>
         </div>
       </section>
+
+      <aside className="flex max-h-[calc(100vh-2rem)] w-full max-w-xs flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+        <header className="border-b border-slate-200 px-4 py-4">
+          <h3 className="text-sm font-black text-blue-950">Dấu hiệu đã thêm</h3>
+        </header>
+        <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto px-4 py-4">
+          <div className="grid gap-2 text-sm font-bold text-blue-950">
+            Dấu hiệu tích cực
+            <div
+              className="grid max-h-72 gap-1.5 overflow-y-auto pr-1"
+              ref={setPositiveListContainer}
+            />
+          </div>
+          <div className="grid gap-2 text-sm font-bold text-blue-950">
+            Dấu hiệu tiêu cực
+            <div
+              className="grid max-h-72 gap-1.5 overflow-y-auto pr-1"
+              ref={setNegativeListContainer}
+            />
+          </div>
+        </div>
+      </aside>
     </div>
   )
 }
