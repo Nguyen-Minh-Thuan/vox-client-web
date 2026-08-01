@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Check, Plus, X } from 'lucide-react'
 import type { FrameworkSignalInput, SignalImportance } from '../types'
 
 type FrameworkSignalListEditorProps = {
@@ -21,9 +21,25 @@ export function FrameworkSignalListEditor({
   signals,
 }: FrameworkSignalListEditorProps) {
   const [form, setForm] = useState(emptyForm)
+  const [status, setStatus] = useState<{
+    text: string
+    type: 'error' | 'success'
+  } | null>(null)
+
+  useEffect(() => {
+    if (!status) {
+      return
+    }
+
+    const timer = setTimeout(() => setStatus(null), 2000)
+    return () => clearTimeout(timer)
+  }, [status])
+
+  const canAdd = Boolean(form.code.trim() && form.description.trim())
 
   function handleAdd() {
-    if (!form.code.trim() || !form.description.trim()) {
+    if (!canAdd) {
+      setStatus({ text: 'Vui lòng nhập Mã và Mô tả trước khi thêm.', type: 'error' })
       return
     }
 
@@ -36,15 +52,20 @@ export function FrameworkSignalListEditor({
         importance: form.importance,
       },
     ])
+    setStatus({ text: `Đã thêm dấu hiệu "${form.code.trim()}".`, type: 'success' })
     setForm(emptyForm)
   }
 
   function handleRemove(index: number) {
     onChange(signals.filter((_, i) => i !== index))
+    setStatus({ text: `Đã xóa dấu hiệu "${signals[index].code}".`, type: 'success' })
   }
 
   return (
     <div className="grid gap-2">
+      {signals.length === 0 ? (
+        <p className="text-xs font-medium text-slate-400">Chưa có dấu hiệu nào.</p>
+      ) : null}
       <div className="flex flex-wrap gap-1.5">
         {signals.map((signal, index) => (
           <span
@@ -114,13 +135,26 @@ export function FrameworkSignalListEditor({
           />
           <button
             aria-label="Thêm dấu hiệu"
-            className="inline-flex size-8 items-center justify-center rounded border border-slate-200 text-indigo-700 hover:bg-indigo-50"
+            className="inline-flex size-8 items-center justify-center rounded border border-slate-200 text-indigo-700 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            disabled={!canAdd}
             onClick={handleAdd}
             type="button"
           >
             <Plus aria-hidden="true" className="size-4" />
           </button>
         </div>
+      ) : null}
+
+      {status ? (
+        <p
+          className={`flex items-center gap-1 text-xs font-semibold ${status.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}
+          role="status"
+        >
+          {status.type === 'success' ? (
+            <Check aria-hidden="true" className="size-3.5" />
+          ) : null}
+          {status.text}
+        </p>
       ) : null}
     </div>
   )
