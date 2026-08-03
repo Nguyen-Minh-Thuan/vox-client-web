@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Check } from 'lucide-react'
+import { AlertTriangle, Check } from 'lucide-react'
 import type { UpdateFrameworkVersionRequest } from '../types'
 
 type FrameworkVersionEditFormDialogProps = {
@@ -50,9 +50,30 @@ export function FrameworkVersionEditFormDialog({
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<'code' | 'effectiveFrom' | 'effectiveTo' | 'name', string>>
   >({})
+  const [showCancelWarning, setShowCancelWarning] = useState(false)
+  const hasChanges =
+    code !== initialValues.code ||
+    name !== initialValues.name ||
+    description !== (initialValues.description ?? '') ||
+    effectiveFrom !== toDateTimeInputValue(initialValues.effectiveFrom) ||
+    effectiveTo !== toDateTimeInputValue(initialValues.effectiveTo)
 
   if (!isOpen) {
     return null
+  }
+
+  function handleCancel() {
+    if (hasChanges) {
+      setShowCancelWarning(true)
+      return
+    }
+
+    onClose()
+  }
+
+  function handleDiscardChanges() {
+    setShowCancelWarning(false)
+    onClose()
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -223,7 +244,7 @@ export function FrameworkVersionEditFormDialog({
               <button
                 className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isSubmitting}
-                onClick={onClose}
+                onClick={handleCancel}
                 type="button"
               >
                 Hủy
@@ -240,6 +261,55 @@ export function FrameworkVersionEditFormDialog({
           </form>
         </div>
       </section>
+
+      {showCancelWarning ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 px-4">
+          <section
+            aria-describedby="framework-version-cancel-warning-description"
+            aria-labelledby="framework-version-cancel-warning-title"
+            aria-modal="true"
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-2xl"
+            role="alertdialog"
+          >
+            <div className="flex items-start gap-4">
+              <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                <AlertTriangle aria-hidden="true" className="size-5" />
+              </span>
+              <div>
+                <h3
+                  className="text-lg font-black text-blue-950"
+                  id="framework-version-cancel-warning-title"
+                >
+                  Hủy các thay đổi?
+                </h3>
+                <p
+                  className="mt-2 text-sm font-medium text-slate-600"
+                  id="framework-version-cancel-warning-description"
+                >
+                  Những thay đổi bạn đã thực hiện chưa được lưu và sẽ bị mất.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                onClick={() => setShowCancelWarning(false)}
+                type="button"
+              >
+                Tiếp tục chỉnh sửa
+              </button>
+              <button
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-red-600 px-4 text-sm font-black text-white transition hover:bg-red-700 focus:ring-4 focus:ring-red-100"
+                onClick={handleDiscardChanges}
+                type="button"
+              >
+                Hủy thay đổi
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   )
 }

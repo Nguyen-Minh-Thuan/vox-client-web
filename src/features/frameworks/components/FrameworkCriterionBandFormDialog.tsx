@@ -60,6 +60,11 @@ export function FrameworkCriterionBandFormDialog({
   const hasAddedSignalChanges =
     JSON.stringify(positiveSignals) !== JSON.stringify(initialPositiveSignals) ||
     JSON.stringify(negativeSignals) !== JSON.stringify(initialNegativeSignals)
+  const hasChanges =
+    hasSignalDraft ||
+    hasAddedSignalChanges ||
+    descriptor !== (initialValues?.descriptor ?? '') ||
+    (!isEditMode && resultBandCode !== '')
 
   function submitForm() {
     onSubmit({
@@ -92,7 +97,7 @@ export function FrameworkCriterionBandFormDialog({
   }
 
   function handleCancelClick() {
-    if (hasSignalDraft || hasAddedSignalChanges) {
+    if (hasChanges) {
       setShowDiscardSignalsWarning(true)
       return
     }
@@ -301,7 +306,7 @@ export function FrameworkCriterionBandFormDialog({
                   Thay đổi chưa được lưu
                 </h2>
                 <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
-                  Bạn đã thêm hoặc chỉnh sửa dấu hiệu cho mức đánh giá này. Nếu hủy, các thay đổi đó sẽ bị mất.
+                  Những thay đổi bạn đã thực hiện chưa được lưu và sẽ bị mất.
                 </p>
               </div>
             </div>
