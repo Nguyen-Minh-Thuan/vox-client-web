@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Check } from 'lucide-react'
+import { AlertTriangle, Check } from 'lucide-react'
 import type {
   FrameworkCriterionBandInput,
   FrameworkResultBand,
@@ -32,6 +32,8 @@ export function FrameworkCriterionBandFormDialog({
   resultBandLabel,
 }: FrameworkCriterionBandFormDialogProps) {
   const isEditMode = Boolean(initialValues)
+  const [initialPositiveSignals] = useState(initialValues?.positiveSignals ?? [])
+  const [initialNegativeSignals] = useState(initialValues?.negativeSignals ?? [])
   const [resultBandCode, setResultBandCode] = useState('')
   const [descriptor, setDescriptor] = useState(initialValues?.descriptor ?? '')
   const [positiveSignals, setPositiveSignals] = useState<
@@ -47,9 +49,25 @@ export function FrameworkCriterionBandFormDialog({
     useState<HTMLDivElement | null>(null)
   const [negativeListContainer, setNegativeListContainer] =
     useState<HTMLDivElement | null>(null)
+  const [hasSignalDraft, setHasSignalDraft] = useState(false)
+  const [showUnsavedSignalWarning, setShowUnsavedSignalWarning] = useState(false)
+  const [showDiscardSignalsWarning, setShowDiscardSignalsWarning] = useState(false)
 
   if (!isOpen) {
     return null
+  }
+
+  const hasAddedSignalChanges =
+    JSON.stringify(positiveSignals) !== JSON.stringify(initialPositiveSignals) ||
+    JSON.stringify(negativeSignals) !== JSON.stringify(initialNegativeSignals)
+
+  function submitForm() {
+    onSubmit({
+      descriptor: descriptor.trim() || null,
+      negativeSignals,
+      positiveSignals,
+      resultBandCode,
+    })
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -60,12 +78,26 @@ export function FrameworkCriterionBandFormDialog({
       return
     }
 
-    onSubmit({
-      descriptor: descriptor.trim() || null,
-      negativeSignals,
-      positiveSignals,
-      resultBandCode,
-    })
+    if (hasSignalDraft) {
+      setShowUnsavedSignalWarning(true)
+      return
+    }
+
+    submitForm()
+  }
+
+  function handleDiscardDraftAndSubmit() {
+    setShowUnsavedSignalWarning(false)
+    submitForm()
+  }
+
+  function handleCancelClick() {
+    if (hasSignalDraft || hasAddedSignalChanges) {
+      setShowDiscardSignalsWarning(true)
+      return
+    }
+
+    onClose()
   }
 
   return (
@@ -143,6 +175,7 @@ export function FrameworkCriterionBandFormDialog({
                 disabled={isSubmitting}
                 negativeListContainer={negativeListContainer}
                 negativeSignals={negativeSignals}
+                onDraftStateChange={setHasSignalDraft}
                 onNegativeChange={setNegativeSignals}
                 onPositiveChange={setPositiveSignals}
                 positiveListContainer={positiveListContainer}
@@ -163,7 +196,7 @@ export function FrameworkCriterionBandFormDialog({
               <button
                 className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isSubmitting}
-                onClick={onClose}
+                onClick={handleCancelClick}
                 type="button"
               >
                 Hủy
@@ -208,6 +241,93 @@ export function FrameworkCriterionBandFormDialog({
           </div>
         </div>
       </aside>
+
+      {showUnsavedSignalWarning ? (
+        <div className="fixed inset-0 z-60 grid place-items-center bg-slate-950/45 px-4 py-6">
+          <section
+            aria-labelledby="unsaved-signal-warning-title"
+            aria-modal="true"
+            className="grid w-full max-w-sm gap-5 rounded-lg bg-white p-6 shadow-xl shadow-slate-950/20"
+            role="dialog"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                <AlertTriangle aria-hidden="true" className="size-5" />
+              </span>
+              <div>
+                <h2 className="text-lg font-black text-blue-950" id="unsaved-signal-warning-title">
+                  Dấu hiệu chưa được thêm
+                </h2>
+                <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+                  Bạn đang nhập một dấu hiệu nhưng chưa nhấn "Thêm". Nếu tiếp tục lưu, dấu hiệu này sẽ bị mất.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                onClick={() => setShowUnsavedSignalWarning(false)}
+                type="button"
+              >
+                Quay lại nhập
+              </button>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 text-sm font-bold text-white transition hover:bg-amber-700"
+                onClick={handleDiscardDraftAndSubmit}
+                type="button"
+              >
+                Bỏ qua và lưu
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {showDiscardSignalsWarning ? (
+        <div className="fixed inset-0 z-60 grid place-items-center bg-slate-950/45 px-4 py-6">
+          <section
+            aria-labelledby="discard-signals-warning-title"
+            aria-modal="true"
+            className="grid w-full max-w-sm gap-5 rounded-lg bg-white p-6 shadow-xl shadow-slate-950/20"
+            role="dialog"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+                <AlertTriangle aria-hidden="true" className="size-5" />
+              </span>
+              <div>
+                <h2 className="text-lg font-black text-blue-950" id="discard-signals-warning-title">
+                  Thay đổi chưa được lưu
+                </h2>
+                <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+                  Bạn đã thêm hoặc chỉnh sửa dấu hiệu cho mức đánh giá này. Nếu hủy, các thay đổi đó sẽ bị mất.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                onClick={() => setShowDiscardSignalsWarning(false)}
+                type="button"
+              >
+                Tiếp tục chỉnh sửa
+              </button>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 text-sm font-bold text-white transition hover:bg-red-700"
+                onClick={() => {
+                  setShowDiscardSignalsWarning(false)
+                  onClose()
+                }}
+                type="button"
+              >
+                Hủy và bỏ thay đổi
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   )
 }

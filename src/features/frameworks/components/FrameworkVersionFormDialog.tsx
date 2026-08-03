@@ -118,7 +118,7 @@ export function FrameworkVersionFormDialog({
     const values = trimFormState(form)
 
     onCreate({
-      code: values.code,
+      code: values.code.trim().toUpperCase(),
       description: values.description || null,
       effectiveFrom: new Date(values.effectiveFrom).toISOString(),
       effectiveTo: values.effectiveTo

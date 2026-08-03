@@ -9,6 +9,7 @@ type FrameworkSignalListEditorProps = {
   disabled?: boolean
   negativeListContainer?: HTMLElement | null
   negativeSignals: FrameworkSignalInput[]
+  onDraftStateChange?: (hasDraft: boolean) => void
   onNegativeChange: (signals: FrameworkSignalInput[]) => void
   onPositiveChange: (signals: FrameworkSignalInput[]) => void
   positiveListContainer?: HTMLElement | null
@@ -38,6 +39,7 @@ export function FrameworkSignalListEditor({
   disabled,
   negativeListContainer,
   negativeSignals,
+  onDraftStateChange,
   onNegativeChange,
   onPositiveChange,
   positiveListContainer,
@@ -68,6 +70,17 @@ export function FrameworkSignalListEditor({
 
   const canAdd = Boolean(form.code.trim() && form.description.trim())
 
+  const hasDraft = Boolean(
+    editing ||
+      form.code.trim() ||
+      form.description.trim() ||
+      form.evidenceHint.trim(),
+  )
+
+  useEffect(() => {
+    onDraftStateChange?.(hasDraft)
+  }, [hasDraft, onDraftStateChange])
+
   function signalsFor(polarity: SignalPolarity) {
     return polarity === 'POSITIVE' ? positiveSignals : negativeSignals
   }
@@ -86,7 +99,7 @@ export function FrameworkSignalListEditor({
     }
 
     const entry = {
-      code: form.code.trim(),
+      code: form.code.trim().toUpperCase(),
       description: form.description.trim(),
       evidenceHint: form.evidenceHint.trim() || null,
       importance: form.importance,

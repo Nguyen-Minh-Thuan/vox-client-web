@@ -54,7 +54,7 @@ export function FrameworkResultBandFormDialog({
     }
 
     onSubmit({
-      code: code.trim(),
+      code: code.trim().toUpperCase(),
       description: description.trim() || null,
       label: label.trim(),
       order,
