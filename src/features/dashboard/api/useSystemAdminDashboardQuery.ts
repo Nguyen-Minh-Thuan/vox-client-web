@@ -13,6 +13,7 @@ export type SystemAdminDashboard = {
   systemRubricCount: number
   teacherCount: number
   totalRevenue: number
+  monthlyRevenue: { amount: number; month: string }[]
   totalSchools: number
 }
 
@@ -30,6 +31,10 @@ const SYSTEM_ADMIN_DASHBOARD = `
       systemRubricCount
       teacherCount
       totalRevenue
+      monthlyRevenue {
+        amount
+        month
+      }
       totalSchools
     }
   }

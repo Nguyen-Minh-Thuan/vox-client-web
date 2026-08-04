@@ -18,6 +18,7 @@ export type SchoolAdminDashboard = {
     total: number
   }
   revenue: number
+  monthlySpending: { amount: number; month: string }[]
   tokenAllocated: number
   tokenUsed: number
 }
@@ -41,6 +42,10 @@ const SCHOOL_ADMIN_DASHBOARD = `
         total
       }
       revenue
+      monthlySpending {
+        amount
+        month
+      }
       tokenAllocated
       tokenUsed
     }

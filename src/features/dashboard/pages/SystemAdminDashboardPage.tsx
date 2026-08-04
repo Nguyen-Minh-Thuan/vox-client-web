@@ -16,8 +16,8 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useNavigate } from 'react-router'
-import { useState } from 'react'
-import { useSystemAdminDashboardQuery } from '../api/useSystemAdminDashboardQuery'
+import { useMemo, useState } from 'react'
+import { useSystemAdminDashboardQuery, type SystemAdminDashboard } from '../api/useSystemAdminDashboardQuery'
 
 const fmt = (n: number) => n.toLocaleString('vi-VN')
 
@@ -246,6 +246,102 @@ function RoleBreakdown({ studentCount, teacherCount, schoolAdminCount }: { schoo
   )
 }
 
+const CHART_HEIGHT = 160
+
+function IncomeChart({ monthlyRevenue }: { monthlyRevenue: SystemAdminDashboard['monthlyRevenue'] }) {
+  const [mode, setMode] = useState<'month' | 'year'>('month')
+
+  const monthPoints = useMemo(
+    () =>
+      monthlyRevenue.slice(-12).map((m) => {
+        const [, month] = m.month.split('-')
+        return { label: `T${Number(month)}`, value: m.amount }
+      }),
+    [monthlyRevenue],
+  )
+
+  const yearPoints = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const m of monthlyRevenue) {
+      const year = m.month.split('-')[0]
+      totals.set(year, (totals.get(year) ?? 0) + m.amount)
+    }
+    return Array.from(totals, ([label, value]) => ({ label, value }))
+  }, [monthlyRevenue])
+
+  const points = mode === 'month' ? monthPoints : yearPoints
+  const max = Math.max(...points.map((p) => p.value), 1)
+  const total = points.reduce((s, p) => s + p.value, 0)
+  const stepX = points.length > 1 ? 100 / (points.length - 1) : 0
+
+  let cumulative = 0
+  const linePoints = points
+    .map((p, i) => {
+      cumulative += p.value
+      const x = points.length > 1 ? i * stepX : 50
+      const y = CHART_HEIGHT - (cumulative / (total || 1)) * CHART_HEIGHT
+      return `${x},${y}`
+    })
+    .join(' ')
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5.5">
+      <div className="mb-4.5 flex flex-wrap items-start justify-between gap-3.5">
+        <div>
+          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Doanh thu hệ thống</h3>
+          <p className="mt-0.5 text-[13px] text-slate-500">
+            Cột: doanh thu từng {mode === 'month' ? 'tháng' : 'năm'} · Đường: doanh thu lũy kế
+          </p>
+        </div>
+        <div className="flex gap-0.5 rounded-[10px] bg-slate-100 p-0.5">
+          {(['month', 'year'] as const).map((m) => (
+            <button
+              className={`rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition ${
+                m === mode ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
+              }`}
+              key={m}
+              onClick={() => setMode(m)}
+              type="button"
+            >
+              {m === 'month' ? 'Theo tháng' : 'Theo năm'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative h-40">
+        <div className="absolute inset-0 flex items-end gap-2">
+          {points.map((p) => (
+            <div className="flex flex-1 flex-col items-center justify-end" key={p.label}>
+              <div
+                className="w-full rounded-t-[5px] bg-linear-to-t from-indigo-600 to-cyan-500"
+                style={{ height: `${Math.max((p.value / max) * 100, p.value > 0 ? 4 : 1.5)}%` }}
+                title={`${p.label}: ${fmt(p.value)} ₫`}
+              />
+            </div>
+          ))}
+        </div>
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 size-full overflow-visible"
+          preserveAspectRatio="none"
+          viewBox={`0 0 100 ${CHART_HEIGHT}`}
+        >
+          <polyline fill="none" points={linePoints} stroke="#F59E0B" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        </svg>
+      </div>
+
+      <div className="mt-2 flex gap-2">
+        {points.map((p) => (
+          <span className="flex-1 text-center text-[11px] font-bold text-slate-400" key={p.label}>
+            {p.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ContentLibrary({ activeFrameworkCount, systemRubricCount }: { activeFrameworkCount: number; systemRubricCount: number }) {
   const items = [
     { ic: <SlidersHorizontal aria-hidden="true" className="size-5.5" />, lab: 'Khung đánh giá đang dùng', sub: 'Bộ tiêu chí chấm điểm hoạt động', tint: { bg: 'bg-indigo-50', fg: 'text-indigo-700' }, val: activeFrameworkCount },
@@ -310,9 +406,6 @@ export function SystemAdminDashboardPage() {
     <section className="grid gap-5">
       <div className="flex flex-wrap items-start gap-5">
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11.5px] font-bold tracking-wide text-violet-700">
-            <ShieldCheck aria-hidden="true" className="size-3.5" /> Chỉ dành cho SYSTEM_ADMIN
-          </span>
           <h1 className="mt-2.5 text-3xl font-extrabold tracking-tight text-slate-900">Tổng quan hệ thống</h1>
           <p className="mt-1.5 max-w-160 text-[15px] text-slate-500">
             Toàn cảnh nền tảng Vox — trường học, người dùng, doanh thu và hàng chờ đăng ký trên toàn hệ thống.
@@ -361,6 +454,8 @@ export function SystemAdminDashboardPage() {
           value={data.pendingRegistrations}
         />
       </div>
+
+      <IncomeChart monthlyRevenue={data.monthlyRevenue} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
         <RegTrend

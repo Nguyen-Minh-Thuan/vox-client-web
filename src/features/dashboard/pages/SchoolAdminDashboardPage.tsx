@@ -19,6 +19,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react'
+import { useNavigate } from 'react-router'
 import { useAppSelector } from '@/app/store/hooks'
 import { useSchoolAdminDashboardQuery, type SchoolAdminDashboard } from '../api/useSchoolAdminDashboardQuery'
 
@@ -146,7 +147,7 @@ function ExamStatusCard({ c }: { c: SchoolAdminDashboard['examStatusCounts'] }) 
     <div className="rounded-2xl border border-slate-200 bg-white p-5.5">
       <div className="mb-4.5 flex items-start gap-3.5">
         <div>
-          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Trạng thái phòng thi</h3>
+          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Trạng thái kỳ thi</h3>
           <p className="mt-0.5 text-[13px] text-slate-500">Phân bố kỳ thi của trường theo trạng thái</p>
         </div>
         <div className="ml-auto text-right text-[22px] font-extrabold text-slate-900 tabular-nums">
@@ -163,7 +164,7 @@ function ExamStatusCard({ c }: { c: SchoolAdminDashboard['examStatusCounts'] }) 
           </span>
         </div>
         <a className="inline-flex items-center gap-1 text-[13.5px] font-bold text-indigo-600 hover:text-indigo-700" href="/school-admin/exams">
-          Quản lý phòng thi
+          Quản lý kỳ thi
           <ArrowUpRight aria-hidden="true" className="size-3.5" />
         </a>
       </div>
@@ -270,6 +271,65 @@ function Appeals({ a }: { a: SchoolAdminDashboard['appealStats'] }) {
   )
 }
 
+function SpendingChart({ monthlySpending, revenue }: { monthlySpending: SchoolAdminDashboard['monthlySpending']; revenue: number }) {
+  const now = new Date()
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const currentYear = String(now.getFullYear())
+
+  const thisMonth = monthlySpending.find((m) => m.month === currentMonthKey)?.amount ?? 0
+  const thisYear = monthlySpending.filter((m) => m.month.startsWith(currentYear)).reduce((sum, m) => sum + m.amount, 0)
+  const max = Math.max(...monthlySpending.map((m) => m.amount), 1)
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5.5">
+      <div className="mb-4.5 flex flex-wrap items-start justify-between gap-3.5">
+        <div className="flex items-start gap-3.5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-[11px] bg-emerald-50 text-emerald-700">
+            <Wallet aria-hidden="true" className="size-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-extrabold tracking-tight text-slate-900">Chi tiêu của trường</h3>
+            <p className="mt-0.5 text-[13px] text-slate-500">Hóa đơn đã thanh toán theo từng tháng</p>
+          </div>
+        </div>
+        <div className="flex gap-5 text-right">
+          <div>
+            <div className="text-[11.5px] font-semibold text-slate-500">Tháng này</div>
+            <div className="text-base font-extrabold text-slate-900 tabular-nums">{fmt(thisMonth)} ₫</div>
+          </div>
+          <div>
+            <div className="text-[11.5px] font-semibold text-slate-500">Năm nay</div>
+            <div className="text-base font-extrabold text-slate-900 tabular-nums">{fmt(thisYear)} ₫</div>
+          </div>
+          <div>
+            <div className="text-[11.5px] font-semibold text-slate-500">Tổng cộng</div>
+            <div className="text-base font-extrabold text-slate-900 tabular-nums">{fmt(revenue)} ₫</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex h-40 items-end gap-2 border-b border-slate-100 pb-0.5">
+        {monthlySpending.map((m) => {
+          const [year, month] = m.month.split('-')
+          const isCurrent = m.month === currentMonthKey
+          const heightPct = Math.max((m.amount / max) * 100, m.amount > 0 ? 4 : 1.5)
+
+          return (
+            <div className="flex flex-1 flex-col items-center justify-end gap-1.5" key={m.month}>
+              <div
+                className={`w-full rounded-t-[5px] transition-all ${isCurrent ? 'bg-linear-to-t from-indigo-600 to-cyan-500' : 'bg-slate-200'}`}
+                style={{ height: `${heightPct}%` }}
+                title={`Tháng ${Number(month)}/${year}: ${fmt(m.amount)} ₫`}
+              />
+              <span className={`text-[11px] font-bold ${isCurrent ? 'text-indigo-600' : 'text-slate-400'}`}>T{Number(month)}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function ExamPipeline({ c }: { c: SchoolAdminDashboard['examStatusCounts'] }) {
   const max = Math.max(...EXAM_STATUS.map((s) => c[s.key]), 1)
 
@@ -296,11 +356,8 @@ function ExamPipeline({ c }: { c: SchoolAdminDashboard['examStatusCounts'] }) {
 
 export function SchoolAdminDashboardPage() {
   const user = useAppSelector((state) => state.auth.user)
+  const navigate = useNavigate()
   const { data, isLoading, isError, refetch } = useSchoolAdminDashboardQuery()
-
-  function jumpToAppeals() {
-    document.getElementById('appeals')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
 
   if (isLoading) {
     return (
@@ -324,19 +381,15 @@ export function SchoolAdminDashboardPage() {
   }
 
   const c = data.examStatusCounts
-  const revBig = (data.revenue / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 })
   const tokenPct = data.tokenAllocated > 0 ? Math.round((data.tokenUsed / data.tokenAllocated) * 100) : 0
 
   return (
     <section className="grid gap-5">
       <div className="flex flex-wrap items-start gap-5">
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11.5px] font-bold tracking-wide text-violet-700">
-            <ShieldCheck aria-hidden="true" className="size-3.5" /> Chỉ dành cho SCHOOL_ADMIN
-          </span>
           <h1 className="mt-2.5 text-3xl font-extrabold tracking-tight text-slate-900">Tổng quan trường</h1>
           <p className="mt-1.5 max-w-160 text-[15px] text-slate-500">
-            Toàn cảnh hoạt động của trường — phòng thi, khiếu nại, mức dùng token và doanh thu của trường
+            Toàn cảnh hoạt động của trường — phòng thi, khiếu nại, mức dùng token và chi tiêu của trường
             {user?.email ? ` · ${user.email}` : ''}.
           </p>
         </div>
@@ -374,7 +427,7 @@ export function SchoolAdminDashboardPage() {
           cta="Xử lý ngay"
           icon={<Gavel aria-hidden="true" className="size-5.5" />}
           label="Khiếu nại chờ xử lý"
-          onCta={jumpToAppeals}
+          onCta={() => navigate('/school-admin/reevaluation')}
           sub="Đơn phúc khảo cần được xử lý"
           value={data.appealStats.pending}
         />
@@ -390,22 +443,11 @@ export function SchoolAdminDashboardPage() {
         <ExamPipeline c={c} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-5 rounded-2xl border border-slate-200 bg-white p-5.5">
-        <div className="flex size-13 shrink-0 items-center justify-center rounded-[13px] bg-emerald-50 text-emerald-700">
-          <Wallet aria-hidden="true" className="size-6.5" />
-        </div>
-        <div>
-          <div className="text-[13.5px] font-semibold text-slate-500">Doanh thu của trường</div>
-          <div className="mt-0.5 text-3xl font-extrabold tracking-tight text-slate-900 tabular-nums">
-            {fmt(data.revenue)} <small className="text-base font-bold text-slate-400">₫</small>
-          </div>
-        </div>
-        <div className="ml-auto max-w-70 text-right text-[13.5px] font-medium text-slate-500">
-          Tổng số tiền đã thanh toán trên toàn thời gian · chỉ tính hóa đơn ở trạng thái <b className="text-slate-900">PAID</b>.
-        </div>
-      </div>
+      <SpendingChart monthlySpending={data.monthlySpending} revenue={data.revenue} />
 
-      <div className="text-[13px] text-slate-400">Doanh thu {revBig}tr ₫ trong kỳ hiện tại.</div>
+      <div className="text-[13px] text-slate-400">
+        Chỉ tính hóa đơn ở trạng thái <b className="text-slate-600">đã trả</b>.
+      </div>
     </section>
   )
 }
