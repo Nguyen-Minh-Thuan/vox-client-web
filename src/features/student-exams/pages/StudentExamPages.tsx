@@ -1,18 +1,36 @@
-import { ArrowRight, BookOpenCheck, ChevronDown, Clock3, Target } from 'lucide-react'
+import { ArrowRight, BookOpenCheck, ChevronDown, Clock3, Send, Target, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { useExamSessionResultQuery, useExamSessionStatusQuery, useMyExamsQuery } from '@/features/exam-results/api/useExamResultQueries'
+import { useExamItemEvaluationQuery, useExamSessionResultQuery, useExamSessionStatusQuery, useMyExamsQuery } from '@/features/exam-results/api/useExamResultQueries'
+import { QuestionEvaluationCard } from '@/features/exam-results/pages/ExamResultPages'
 import {
   formatScore,
   getAttemptStatusDisplay,
   getExamResultStatusDisplay,
+  getHiddenResultNotice,
   getStudentExamStatusDisplay,
+  type ExamResultItemDto,
+  type StudentExamKind,
   type StudentExamSessionSummaryDto,
+  type StudentExamStatusFilter,
 } from '@/features/exam-results/types'
+import { Pagination } from '@/shared/components/Pagination'
 import { DetailHeaderCard } from '@/shared/ui/DetailHeaderCard'
 import { formatPublishedResult } from '@/shared/lib/resultScore'
 import { StatCard } from '@/shared/ui/StatCard'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
+import { FeedbackToast } from '@/shared/ui/FeedbackToast'
+import { toApiError } from '@/shared/api'
+import { useCreateStudentAppealMutation } from '../api/useStudentAppealQueries'
+
+const PAGE_SIZE = 20
+
+const STATUS_FILTERS: Array<{ label: string; value: StudentExamStatusFilter | '' }> = [
+  { label: 'Tất cả', value: '' },
+  { label: getStudentExamStatusDisplay('upcoming').label, value: 'upcoming' },
+  { label: getStudentExamStatusDisplay('in_progress').label, value: 'in_progress' },
+  { label: getStudentExamStatusDisplay('completed').label, value: 'completed' },
+]
 
 function formatDate(value?: string | null) {
   if (!value) {
@@ -73,13 +91,26 @@ function AttemptList({
   )
 }
 
-export function StudentExamsPage() {
+function StudentExamsPageCore({
+  detailBasePath,
+  kind,
+  title,
+}: {
+  detailBasePath: string
+  kind: StudentExamKind
+  title: string
+}) {
   const navigate = useNavigate()
-  const examsQuery = useMyExamsQuery()
+  const [page, setPage] = useState(1)
+  const [statusFilter, setStatusFilter] = useState<StudentExamStatusFilter | ''>('')
+  const examsQuery = useMyExamsQuery({ kind, page, size: PAGE_SIZE, status: statusFilter })
   const [expandedExamIds, setExpandedExamIds] = useState<Record<string, boolean>>({})
-  const exams = useMemo(() => examsQuery.data ?? [], [examsQuery.data])
-  const completedCount = exams.filter((exam) => exam.status === 'completed').length
-  const attemptCount = exams.reduce((sum, exam) => sum + exam.sessions.length, 0)
+  const exams = examsQuery.data?.content ?? []
+
+  function changeStatusFilter(value: StudentExamStatusFilter | '') {
+    setStatusFilter(value)
+    setPage(1)
+  }
 
   if (examsQuery.isLoading) {
     return (
@@ -94,16 +125,39 @@ export function StudentExamsPage() {
   return (
     <section className="mx-auto max-w-220">
       <div>
-        <h1 className="text-[30px] font-extrabold tracking-tight text-slate-900">Bài thi của tôi</h1>
+        <h1 className="text-[30px] font-extrabold tracking-tight text-slate-900">{title}</h1>
         <p className="mt-2 text-[15px] text-slate-500">
           Theo dõi lịch thi, trạng thái và từng lượt làm bài của bạn.
         </p>
       </div>
 
+      {/* Chỉ còn một số đếm: hai thẻ cũ ("Đã kết thúc", "Tổng lượt đã tạo") gộp từ dữ liệu trong
+          bộ nhớ nên khi phân trang chúng chỉ đếm được trang hiện tại. Số bài đã kết thúc giờ xem
+          bằng cách bấm chip lọc tương ứng. */}
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <StatCard icon={<BookOpenCheck size={19} />} iconTone="indigo" label="Tổng bài thi" value={exams.length} />
-        <StatCard icon={<Clock3 size={19} />} iconTone="amber" label="Đã kết thúc" value={completedCount} />
-        <StatCard icon={<Target size={19} />} iconTone="emerald" label="Tổng lượt đã tạo" value={attemptCount} />
+        <StatCard
+          icon={<BookOpenCheck size={19} />}
+          iconTone="indigo"
+          label="Tổng bài thi"
+          value={examsQuery.data?.totalElements ?? 0}
+        />
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        {STATUS_FILTERS.map((filter) => (
+          <button
+            className={`inline-flex h-9 items-center rounded-full border px-4 text-xs font-bold transition ${
+              statusFilter === filter.value
+                ? 'border-indigo-600 bg-indigo-600 text-white'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+            key={filter.value || 'all'}
+            onClick={() => changeStatusFilter(filter.value)}
+            type="button"
+          >
+            {filter.label}
+          </button>
+        ))}
       </div>
 
       <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -115,7 +169,9 @@ export function StudentExamsPage() {
         </div>
 
         {exams.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-slate-400">Chưa có bài thi nào được giao cho bạn.</div>
+          <div className="px-4 py-8 text-center text-sm text-slate-400">
+            {statusFilter ? 'Không có bài thi nào ở trạng thái này.' : 'Chưa có bài thi nào được giao cho bạn.'}
+          </div>
         ) : (
           exams.map((exam) => {
             const statusDisplay = getStudentExamStatusDisplay(exam.status)
@@ -154,7 +210,7 @@ export function StudentExamsPage() {
                     ) : singleSession ? (
                       <button
                         className="inline-flex h-8.5 items-center justify-center gap-1 rounded-full border border-slate-200 px-3 text-xs font-bold text-indigo-600 transition hover:bg-slate-50"
-                        onClick={() => navigate(`/student/exams/${singleSession.sessionId}/result`)}
+                        onClick={() => navigate(`${detailBasePath}/${singleSession.sessionId}/result`)}
                         type="button"
                       >
                         Xem kết quả
@@ -171,7 +227,7 @@ export function StudentExamsPage() {
                 {isExpanded ? (
                   <div className="px-4 pb-4">
                     <AttemptList
-                      onOpenResult={(sessionId) => navigate(`/student/exams/${sessionId}/result`)}
+                      onOpenResult={(sessionId) => navigate(`${detailBasePath}/${sessionId}/result`)}
                       sessions={exam.sessions}
                     />
                   </div>
@@ -180,9 +236,27 @@ export function StudentExamsPage() {
             )
           })
         )}
+
+        {examsQuery.data ? (
+          <Pagination
+            currentPage={examsQuery.data.page}
+            itemName="bài thi"
+            onPageChange={setPage}
+            totalElements={examsQuery.data.totalElements}
+            totalPages={examsQuery.data.totalPages}
+          />
+        ) : null}
       </div>
     </section>
   )
+}
+
+export function StudentExamsPage() {
+  return <StudentExamsPageCore detailBasePath="/student/exams" kind="CENTRALIZED" title="Bài kiểm tra của tôi" />
+}
+
+export function StudentClassTestsPage() {
+  return <StudentExamsPageCore detailBasePath="/student/class-tests" kind="CLASS_TEST" title="Bài tập của tôi" />
 }
 
 function ResultStatePanel({
@@ -211,8 +285,76 @@ function ResultStatePanel({
   )
 }
 
-export function StudentExamResultPage() {
+function StudentQuestionEvaluation({ item, index }: { item: ExamResultItemDto; index: number }) {
+  const [open, setOpen] = useState(false)
+  const evaluationQuery = useExamItemEvaluationQuery(open ? item.responseId : null)
+  const prompt = evaluationQuery.data?.turns.find((turn) => turn.promptText)?.promptText
+  return (
+    <QuestionEvaluationCard
+      evaluation={evaluationQuery.data}
+      itemResult={item}
+      onToggle={() => setOpen((current) => !current)}
+      open={open}
+      questionCode={`Câu ${index + 1}`}
+      questionText={prompt ?? (open && evaluationQuery.isLoading ? 'Đang tải chi tiết câu hỏi...' : undefined)}
+    />
+  )
+}
+
+/**
+ * Không có bước chọn câu: giám khảo phúc khảo bắt buộc chấm lại toàn bộ bài
+ * (`GradingItemScoreResolver` enforceFullCoverage) rồi tính lại tổng điểm từ mọi câu,
+ * nên danh sách học sinh chọn không hề thu hẹp phạm vi chấm — chỉ tạo thao tác thừa.
+ */
+function AppealForm({
+  onClose,
+  onSuccess,
+  resultId,
+}: {
+  onClose: () => void
+  onSuccess: () => void
+  resultId: string
+}) {
+  const mutation = useCreateStudentAppealMutation()
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  async function submit() {
+    const normalizedReason = reason.trim()
+    if (!normalizedReason) {
+      setError('Vui lòng nhập lý do phúc khảo.')
+      return
+    }
+    try {
+      setError(null)
+      await mutation.mutateAsync({
+        candidateResultId: resultId,
+        reason: normalizedReason,
+      })
+      onSuccess()
+    } catch (caught) {
+      setError(toApiError(caught).message)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4">
+      <div aria-modal="true" className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white p-5 shadow-xl" role="dialog">
+        <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-extrabold text-slate-900">Gửi đơn phúc khảo</h2><button aria-label="Đóng" className="inline-flex size-9 items-center justify-center rounded-lg hover:bg-slate-100" onClick={onClose} type="button"><X className="size-4" /></button></div>
+        <p className="mt-4 rounded-lg bg-slate-50 px-3.5 py-3 text-[13px] leading-relaxed text-slate-600">Đơn phúc khảo áp dụng cho <strong className="font-bold text-slate-800">toàn bộ bài làm</strong> — giám khảo sẽ chấm lại tất cả các câu.</p>
+        <label className="mt-5 block text-sm font-bold text-slate-800">Lý do<span className="text-red-600"> *</span><textarea className="mt-2 min-h-28 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100" maxLength={512} onChange={(event) => setReason(event.target.value)} value={reason} /></label>
+        {error ? <p className="mt-3 text-sm font-semibold text-red-600">{error}</p> : null}
+        <div className="mt-5 flex justify-end gap-3"><button className="h-10 rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700" onClick={onClose} type="button">Hủy</button><button className="inline-flex h-10 items-center gap-2 rounded-lg bg-cyan-600 px-4 text-sm font-bold text-white hover:bg-cyan-700 disabled:opacity-60" disabled={mutation.isPending} onClick={submit} type="button"><Send className="size-4" />{mutation.isPending ? 'Đang gửi...' : 'Gửi đơn'}</button></div>
+      </div>
+    </div>
+  )
+}
+
+function StudentExamResultPageCore({ title }: { title: string }) {
   const { sessionId } = useParams()
+  const navigate = useNavigate()
+  const [appealOpen, setAppealOpen] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const sessionQuery = useExamSessionStatusQuery(sessionId ?? null)
   const resultQuery = useExamSessionResultQuery(sessionId ?? null)
   const session = sessionQuery.data
@@ -244,7 +386,11 @@ export function StudentExamResultPage() {
     )
   }
 
-  const resultHiddenForReview = Boolean(result && session.flagged && result.status === 'PENDING_REVIEW')
+  // Luật "trạng thái nào học sinh được xem" nằm ở BE và đến đây qua `scoreVisible` — cùng
+  // một cờ mà trang giáo viên đang dùng. Trước đây trang này tự suy bằng
+  // `flagged && PENDING_REVIEW`, nên bài chưa ai soát mà không bị gắn cờ vẫn lộ hết điểm.
+  const resultHidden = Boolean(result && !result.scoreVisible)
+  const hiddenNotice = result ? getHiddenResultNotice(result.status) : null
   const resultInvalid = Boolean(result && result.status === 'INVALID')
   const headerStatus = result ? getExamResultStatusDisplay(result.status) : getAttemptStatusDisplay(session.status)
 
@@ -260,20 +406,20 @@ export function StudentExamResultPage() {
         ]}
         statusLabel={headerStatus.label}
         statusTone={headerStatus.tone}
-        title="Kết quả bài thi"
+        title={title}
       />
 
-      {resultHiddenForReview ? (
+      {resultHidden && hiddenNotice ? (
         <div className="mt-5">
           <ResultStatePanel
-            description="Bài thi của bạn đang chờ giáo viên xem xét trước khi công bố kết quả."
-            title="Đang chờ giáo viên xem xét"
-            tone="warning"
+            description={hiddenNotice.description}
+            title={hiddenNotice.title}
+            tone={hiddenNotice.tone}
           />
         </div>
       ) : null}
 
-      {!resultHiddenForReview && resultInvalid ? (
+      {!resultHidden && resultInvalid ? (
         <div className="mt-5">
           <ResultStatePanel
             description="Bài thi của bạn không hợp lệ do vi phạm quy chế thi. Vui lòng liên hệ giám thị/nhà trường nếu có thắc mắc."
@@ -283,7 +429,7 @@ export function StudentExamResultPage() {
         </div>
       ) : null}
 
-      {!resultHiddenForReview && !resultInvalid && result ? (
+      {!resultHidden && !resultInvalid && result ? (
         <>
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <StatCard icon={<Target size={19} />} iconTone="indigo" label="Tổng điểm" value={formatScore(result.totalScore)} />
@@ -309,10 +455,23 @@ export function StudentExamResultPage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-7">
+            <h2 className="text-lg font-extrabold text-slate-900">Chi tiết từng câu</h2>
+            <div className="mt-3 grid gap-3">
+              {result.items.map((item, index) => <StudentQuestionEvaluation index={index} item={item} key={item.paperItemId} />)}
+            </div>
+          </div>
+
+          {result.status === 'RELEASED' ? (
+            <div className="mt-6 flex justify-end">
+              <button className="inline-flex h-11 items-center gap-2 rounded-lg bg-cyan-600 px-4 text-sm font-bold text-white hover:bg-cyan-700" onClick={() => setAppealOpen(true)} type="button"><Send className="size-4" />Gửi đơn phúc khảo</button>
+            </div>
+          ) : null}
         </>
       ) : null}
 
-      {!result && !resultHiddenForReview ? (
+      {!result && !resultHidden ? (
         <div className="mt-5">
           {session.status === 'GRADING_FAILED' ? (
             <ResultStatePanel
@@ -359,6 +518,17 @@ export function StudentExamResultPage() {
           )}
         </div>
       ) : null}
+
+      {appealOpen && result ? <AppealForm onClose={() => setAppealOpen(false)} onSuccess={() => { setAppealOpen(false); setSuccessMessage('Đã gửi đơn phúc khảo.'); window.setTimeout(() => navigate('/student/appeals'), 500) }} resultId={result.id} /> : null}
+      <FeedbackToast message={successMessage} onClose={() => setSuccessMessage(null)} tone="success" />
     </section>
   )
+}
+
+export function StudentExamResultPage() {
+  return <StudentExamResultPageCore title="Kết quả bài kiểm tra" />
+}
+
+export function StudentClassTestResultPage() {
+  return <StudentExamResultPageCore title="Kết quả bài tập" />
 }
