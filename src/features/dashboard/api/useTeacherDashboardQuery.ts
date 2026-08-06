@@ -20,6 +20,15 @@ export type TeacherDashboard = {
     gradedCount: number
     totalCandidates: number
   }
+  classScoreStats: {
+    examName: string
+    className: string
+    averageScore: number | null
+    highestScore: number | null
+    lowestScore: number | null
+    gradedCount: number
+    totalCandidates: number
+  }[]
 }
 
 const TEACHER_DASHBOARD = `
@@ -40,6 +49,15 @@ const TEACHER_DASHBOARD = `
       }
       scoreStats {
         averageScore
+        gradedCount
+        totalCandidates
+      }
+      classScoreStats {
+        examName
+        className
+        averageScore
+        highestScore
+        lowestScore
         gradedCount
         totalCandidates
       }

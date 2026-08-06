@@ -86,61 +86,53 @@ function Kpi({
   )
 }
 
-function Donut({ center, segments, sub }: { center: number; segments: { color: string; label: string; value: number }[]; sub: string }) {
-  const visible = segments.filter((s) => s.value > 0)
-  const total = visible.reduce((s, x) => s + x.value, 0)
-  const stops = total
-    ? visible
-        .reduce<{ acc: number; parts: string[] }>(
-          (state, s) => {
-            const from = (state.acc / total) * 360
-            const acc = state.acc + s.value
-            const to = (acc / total) * 360
-            return { acc, parts: [...state.parts, `${s.color} ${from}deg ${to}deg`] }
-          },
-          { acc: 0, parts: [] },
-        )
-        .parts.join(',')
-    : '#E2E8F0 0deg 360deg'
+const fmtScore = (n: number | null) => (n === null ? '—' : n.toLocaleString('vi-VN', { maximumFractionDigits: 2 }))
 
-  return (
-    <div className="flex items-center gap-6">
-      <div className="size-40 shrink-0 rounded-full" style={{ background: `conic-gradient(${stops})` }}>
-        <div className="m-6.5 flex size-27 flex-col items-center justify-center rounded-full bg-white">
-          <div className="text-3xl font-extrabold text-slate-900 tabular-nums">{fmt(center)}</div>
-          <div className="mt-0.5 text-xs font-semibold text-slate-500">{sub}</div>
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-3.5">
-        {segments.map((s) => (
-          <div className="flex items-center gap-2.5" key={s.label}>
-            <span className="size-3 shrink-0 rounded-[4px]" style={{ background: s.color }} />
-            <span className="text-sm font-semibold text-slate-600">{s.label}</span>
-            <span className="ml-auto text-base font-extrabold text-slate-900 tabular-nums">{fmt(s.value)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function ExamStatusCard({ c }: { c: TeacherDashboard['examStatusCounts'] }) {
-  const segments = EXAM_STATUS.map((s) => ({ color: s.color, label: s.label, value: c[s.key] }))
+function ClassScoreCard({ c, rows }: { c: TeacherDashboard['examStatusCounts']; rows: TeacherDashboard['classScoreStats'] }) {
   const live = c.inProgress + c.scheduled
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5.5">
       <div className="mb-4.5 flex items-start gap-3.5">
         <div>
-          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Trạng thái bài kiểm tra</h3>
-          <p className="mt-0.5 text-[13px] text-slate-500">Phân bố bài kiểm tra lớp bạn tham gia theo trạng thái</p>
+          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Điểm theo lớp</h3>
+          <p className="mt-0.5 text-[13px] text-slate-500">Điểm trung bình, cao nhất & thấp nhất của từng bài kiểm tra theo lớp</p>
         </div>
         <div className="ml-auto text-right text-[22px] font-extrabold text-slate-900 tabular-nums">
-          {c.total}
-          <small className="block text-[11.5px] font-semibold text-slate-500">tổng bài kiểm tra</small>
+          {rows.length}
+          <small className="block text-[11.5px] font-semibold text-slate-500">bài kiểm tra</small>
         </div>
       </div>
-      <Donut center={c.total} segments={segments} sub="kỳ thi" />
+
+      {rows.length === 0 ? (
+        <p className="py-6 text-center text-sm text-slate-500">Chưa có bài kiểm tra nào để hiển thị điểm.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-140 border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 text-left text-[12px] font-bold uppercase tracking-wide text-slate-400">
+                <th className="py-2 pr-3">Lớp</th>
+                <th className="py-2 pr-3">Bài kiểm tra</th>
+                <th className="py-2 pr-3 text-right">Điểm TB</th>
+                <th className="py-2 pr-3 text-right">Cao nhất</th>
+                <th className="py-2 text-right">Thấp nhất</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr className="border-b border-slate-50 last:border-0" key={`${r.className}-${r.examName}-${i}`}>
+                  <td className="py-2.5 pr-3 font-semibold text-slate-700">{r.className}</td>
+                  <td className="py-2.5 pr-3 text-slate-600">{r.examName}</td>
+                  <td className="py-2.5 pr-3 text-right font-bold text-slate-900 tabular-nums">{fmtScore(r.averageScore)}</td>
+                  <td className="py-2.5 pr-3 text-right text-emerald-600 tabular-nums">{fmtScore(r.highestScore)}</td>
+                  <td className="py-2.5 text-right text-red-500 tabular-nums">{fmtScore(r.lowestScore)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <div className="mt-5.5 flex items-center justify-between border-t border-slate-100 pt-4">
         <div className="flex items-center gap-2.5 text-[13.5px] text-slate-600">
           <Play aria-hidden="true" className="size-4.5 text-amber-500" />
@@ -272,7 +264,7 @@ export function TeacherDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
           icon={<CalendarDays aria-hidden="true" className="size-5.5" />}
           label="Tổng số bài kiểm tra"
@@ -296,13 +288,6 @@ export function TeacherDashboardPage() {
           value={data.scoreStats.averageScore === null ? '—' : data.scoreStats.averageScore.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
         />
         <Kpi
-          icon={<Flag aria-hidden="true" className="size-5.5" />}
-          label="Kết quả đã công bố"
-          sub={<span className="font-semibold text-slate-600">Bài kiểm tra đã công bố điểm cho học sinh</span>}
-          tint={{ bg: 'bg-emerald-50', fg: 'text-emerald-700' }}
-          value={c.resultsPublished}
-        />
-        <Kpi
           icon={<ClipboardCheck aria-hidden="true" className="size-5.5" />}
           label="Đã chấm xong"
           sub={<span className="font-semibold text-slate-600">Lượt chấm bạn đã hoàn thành</span>}
@@ -321,7 +306,7 @@ export function TeacherDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">
-        <ExamStatusCard c={c} />
+        <ClassScoreCard c={c} rows={data.classScoreStats} />
         <Grading g={data.gradingStats} />
       </div>
 
