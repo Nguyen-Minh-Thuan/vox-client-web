@@ -15,6 +15,11 @@ export type TeacherDashboard = {
     completed: number
     pending: number
   }
+  scoreStats: {
+    averageScore: number | null
+    gradedCount: number
+    totalCandidates: number
+  }
 }
 
 const TEACHER_DASHBOARD = `
@@ -32,6 +37,11 @@ const TEACHER_DASHBOARD = `
       gradingStats {
         completed
         pending
+      }
+      scoreStats {
+        averageScore
+        gradedCount
+        totalCandidates
       }
     }
   }

@@ -11,8 +11,8 @@ import {
   Lock,
   Play,
   RefreshCw,
-  ShieldCheck,
   SquarePen,
+  TrendingUp,
 } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { useAppSelector } from '@/app/store/hooks'
@@ -132,12 +132,12 @@ function ExamStatusCard({ c }: { c: TeacherDashboard['examStatusCounts'] }) {
     <div className="rounded-2xl border border-slate-200 bg-white p-5.5">
       <div className="mb-4.5 flex items-start gap-3.5">
         <div>
-          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Trạng thái kỳ thi</h3>
-          <p className="mt-0.5 text-[13px] text-slate-500">Phân bố kỳ thi bạn tham gia theo trạng thái</p>
+          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Trạng thái bài kiểm tra</h3>
+          <p className="mt-0.5 text-[13px] text-slate-500">Phân bố bài kiểm tra lớp bạn tham gia theo trạng thái</p>
         </div>
         <div className="ml-auto text-right text-[22px] font-extrabold text-slate-900 tabular-nums">
           {c.total}
-          <small className="block text-[11.5px] font-semibold text-slate-500">tổng kỳ thi</small>
+          <small className="block text-[11.5px] font-semibold text-slate-500">tổng bài kiểm tra</small>
         </div>
       </div>
       <Donut center={c.total} segments={segments} sub="kỳ thi" />
@@ -145,11 +145,11 @@ function ExamStatusCard({ c }: { c: TeacherDashboard['examStatusCounts'] }) {
         <div className="flex items-center gap-2.5 text-[13.5px] text-slate-600">
           <Play aria-hidden="true" className="size-4.5 text-amber-500" />
           <span>
-            <b className="text-slate-900">{live}</b> kỳ thi sắp tới & đang diễn ra
+            <b className="text-slate-900">{live}</b> bài kiểm tra sắp tới & đang diễn ra
           </span>
         </div>
-        <a className="inline-flex items-center gap-1 text-[13.5px] font-bold text-indigo-600 hover:text-indigo-700" href="/teacher/exams">
-          Quản lý kỳ thi
+        <a className="inline-flex items-center gap-1 text-[13.5px] font-bold text-indigo-600 hover:text-indigo-700" href="/teacher/class-tests">
+          Quản lý bài kiểm tra
           <ArrowUpRight aria-hidden="true" className="size-3.5" />
         </a>
       </div>
@@ -163,8 +163,8 @@ function ExamPipeline({ c }: { c: TeacherDashboard['examStatusCounts'] }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5.5">
       <div className="mb-4.5">
-        <h3 className="text-base font-extrabold tracking-tight text-slate-900">Vòng đời kỳ thi</h3>
-        <p className="mt-0.5 text-[13px] text-slate-500">Số phòng thi tại mỗi giai đoạn</p>
+        <h3 className="text-base font-extrabold tracking-tight text-slate-900">Vòng đời bài kiểm tra</h3>
+        <p className="mt-0.5 text-[13px] text-slate-500">Số bài kiểm tra tại mỗi giai đoạn</p>
       </div>
       <div className="flex flex-col gap-3.5">
         {EXAM_STATUS.map((s) => (
@@ -266,16 +266,16 @@ export function TeacherDashboardPage() {
         <div>
           <h1 className="mt-2.5 text-3xl font-extrabold tracking-tight text-slate-900">Tổng quan giảng viên</h1>
           <p className="mt-1.5 max-w-160 text-[15px] text-slate-500">
-            Kỳ thi bạn tham gia (coi thi/chấm thi/tác giả đề) và nhiệm vụ chấm bài của bạn
+            Bài kiểm tra lớp bạn tham gia (coi thi/chấm thi/tác giả đề), điểm trung bình và nhiệm vụ chấm bài của bạn
             {user?.email ? ` · ${user.email}` : ''}.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-5">
         <Kpi
           icon={<CalendarDays aria-hidden="true" className="size-5.5" />}
-          label="Tổng số kỳ thi"
+          label="Tổng số bài kiểm tra"
           sub={
             <span className="font-semibold text-slate-600">
               <b className="text-slate-900">{c.inProgress}</b> đang diễn ra · <b className="text-slate-900">{c.scheduled}</b> đã lên lịch
@@ -285,9 +285,20 @@ export function TeacherDashboardPage() {
           value={c.total}
         />
         <Kpi
+          icon={<TrendingUp aria-hidden="true" className="size-5.5" />}
+          label="Điểm trung bình"
+          sub={
+            <span className="font-semibold text-slate-600">
+              <b className="text-slate-900">{data.scoreStats.gradedCount}</b>/{data.scoreStats.totalCandidates} thí sinh có điểm
+            </span>
+          }
+          tint={{ bg: 'bg-violet-50', fg: 'text-violet-700' }}
+          value={data.scoreStats.averageScore === null ? '—' : data.scoreStats.averageScore.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
+        />
+        <Kpi
           icon={<Flag aria-hidden="true" className="size-5.5" />}
           label="Kết quả đã công bố"
-          sub={<span className="font-semibold text-slate-600">Kỳ thi đã công bố điểm cho học sinh</span>}
+          sub={<span className="font-semibold text-slate-600">Bài kiểm tra đã công bố điểm cho học sinh</span>}
           tint={{ bg: 'bg-emerald-50', fg: 'text-emerald-700' }}
           value={c.resultsPublished}
         />
