@@ -11,7 +11,6 @@ import {
   Settings,
   ShieldCheck,
   UserRound,
-  Users,
   X,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
@@ -19,6 +18,7 @@ import logoImage from '@/assets/images/logo.png'
 import { clearAuthState } from '@/app/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks'
 import { clearAuthTokens } from '@/features/auth/session/authSession'
+import { NotificationBell, unregisterPushDevice } from '@/features/notifications'
 import { useQuestionsQuery } from '@/features/question/api/useQuestionsQuery'
 import { useProfileQuery } from '@/features/profile'
 
@@ -43,12 +43,7 @@ const navigationItems: NavigationItem[] = [
     icon: Home,
     label: 'Tổng quan',
     to: '/system-admin/dashboard',
-  },
-  {
-    icon: Users,
-    label: 'Quản lý người dùng',
-    to: '/system-admin/users',
-  },
+  }
 ]
 
 const navigationGroups: NavigationGroup[] = [
@@ -87,7 +82,7 @@ const navigationGroups: NavigationGroup[] = [
         to: '/system-admin/assessment-policies',
       },
       {
-        label: 'Quản lý Scoring Rules',
+        label: 'Quản lý quy tắc tính điểm',
         to: '/system-admin/scoring-rules',
       },
     ],
@@ -342,9 +337,12 @@ export function SystemAdminLayout() {
       : group,
   )
 
-  function handleLogout() {
+  async function handleLogout() {
     setIsMobileMenuOpen(false)
     setIsUserMenuOpen(false)
+    // Gỡ thiết bị nhận thông báo TRƯỚC khi xoá token: request cần header
+    // Authorization, và backend không có endpoint đăng xuất nào dọn giúp việc này.
+    await unregisterPushDevice()
     clearAuthTokens()
     dispatch(clearAuthState())
     navigate('/login', { replace: true })
@@ -392,14 +390,7 @@ export function SystemAdminLayout() {
           </button>
 
           <div className="ml-auto flex items-center gap-3">
-            <button
-              aria-label="Thông báo"
-              className="relative inline-flex size-11 items-center justify-center rounded-lg border border-transparent text-blue-950 transition hover:border-slate-200 hover:bg-slate-50"
-              type="button"
-            >
-              <Bell aria-hidden="true" className="size-5" />
-              <span className="absolute right-2 top-2 size-2 rounded-full bg-red-500 ring-2 ring-white" />
-            </button>
+            <NotificationBell className="text-blue-950" />
 
             <div className="relative">
               <button
