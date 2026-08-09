@@ -35,7 +35,8 @@ import { useExamStatusRangeQuery } from '../api/useExamStatusRangeQuery'
 import { useNearestCentralizedExamQuery, type NearestCentralizedExam } from '../api/useNearestCentralizedExamQuery'
 import { useQuestionBankStatsQuery, type QuestionBankStats } from '../api/useQuestionBankStatsQuery'
 import { useSchoolAdminDashboardQuery, type SchoolAdminDashboard } from '../api/useSchoolAdminDashboardQuery'
-import { useTokenUsageBreakdownQuery, type QuotaType, type TokenQuotaUsage } from '../api/useTokenUsageBreakdownQuery'
+import type { QuotaType, TokenQuotaUsage } from '../api/useTokenUsageBreakdownQuery'
+import { useTokenUsageTimeseriesQuery, type TokenUsageTimeseries, type TokenUsageTimeseriesPoint } from '../api/useTokenUsageTimeseriesQuery'
 
 const EXAM_STATUS = [
   { color: '#94A3B8', icon: <SquarePen aria-hidden="true" className="size-4.5" />, key: 'draft' as const, label: 'Bản nháp' },
@@ -170,6 +171,10 @@ function daysUntil(dateStr: string) {
 
 function formatDate(dateStr: string) {
   return new Date(`${dateStr}T00:00:00`).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function formatShortDate(dateStr: string) {
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
 }
 
 const NEAREST_EXAM_STATUS_DISPLAY: Record<NearestCentralizedExam['status'], { label: string; tone: string }> = {
@@ -407,28 +412,170 @@ function TokenQuotaPanel({ quotaType, usage }: { quotaType: QuotaType; usage: To
   )
 }
 
-function TokenUsageSection({ usage }: { usage: TokenQuotaUsage[] }) {
-  const usageByType = new Map(usage.map((item) => [item.quotaType, item]))
+const QUOTA_COLORS: Record<QuotaType, string> = {
+  CLASS_TEST: '#8B5CF6',
+  GRADING: '#4F46E5',
+  PRACTICE: '#06B6D4',
+}
+
+const TOKEN_WINDOW_DAYS = { '7': 7, '30': 30, '90': 90 } as const
+type TokenUsageWindow = keyof typeof TOKEN_WINDOW_DAYS
+
+function isoDateDaysAgo(days: number) {
+  const d = new Date()
+  d.setDate(d.getDate() - days)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Danh sách ngày YYYY-MM-DD liên tục từ hôm nay lùi về `days - 1` ngày trước, tăng dần. */
+function buildDailyBuckets(days: number) {
+  return Array.from({ length: days }, (_, i) => isoDateDaysAgo(days - 1 - i))
+}
+
+/** Gộp `points` (đã group theo bucket+quotaType ở BE) vào đúng trục ngày hiển thị, ngày thiếu = 0. */
+function buildDailySeries(points: TokenUsageTimeseriesPoint[], bucketDates: string[]) {
+  const byDateAndType = new Map<string, number>()
+  for (const p of points) {
+    const dateKey = p.bucket.slice(0, 10)
+    byDateAndType.set(`${dateKey}|${p.quotaType}`, (byDateAndType.get(`${dateKey}|${p.quotaType}`) ?? 0) + p.tokensConsumed)
+  }
+  const series = {} as Record<QuotaType, number[]>
+  for (const quotaType of QUOTA_TYPES) {
+    series[quotaType] = bucketDates.map((date) => byDateAndType.get(`${date}|${quotaType}`) ?? 0)
+  }
+  return series
+}
+
+const USAGE_CHART_HEIGHT = 140
+
+function TokenUsageTimeseriesSection({
+  data,
+  isError,
+  isFetching,
+  onRetry,
+  onWindowChange,
+  window,
+}: {
+  data: TokenUsageTimeseries | undefined
+  isError: boolean
+  isFetching: boolean
+  onRetry: () => void
+  onWindowChange: (w: TokenUsageWindow) => void
+  window: TokenUsageWindow
+}) {
+  const days = TOKEN_WINDOW_DAYS[window]
+  const bucketDates = useMemo(() => buildDailyBuckets(days), [days])
+  const series = useMemo(() => buildDailySeries(data?.points ?? [], bucketDates), [data, bucketDates])
+  const max = Math.max(...QUOTA_TYPES.flatMap((t) => series[t]), 1)
+  const hasUsage = max > 1 || QUOTA_TYPES.some((t) => series[t].some((v) => v > 0))
+  const stepX = bucketDates.length > 1 ? 100 / (bucketDates.length - 1) : 0
+
+  const usageByType = new Map((data?.currentPeriod ?? []).map((item) => [item.quotaType, item]))
+
+  const labelStep = Math.max(1, Math.round((bucketDates.length - 1) / 4))
+  const labelIndices = bucketDates.map((_, i) => i).filter((i) => i % labelStep === 0 || i === bucketDates.length - 1)
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5.5">
       <div className="mb-4.5 flex flex-wrap items-start gap-3.5">
         <div>
-          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Sử dụng token</h3>
-          <p className="mt-0.5 text-[13px] text-slate-500">Chi tiết hạn mức theo từng loại của gói hiện tại</p>
+          <h3 className="text-base font-extrabold tracking-tight text-slate-900">Sử dụng token theo thời gian</h3>
+          <p className="mt-0.5 text-[13px] text-slate-500">Token AI tiêu thụ mỗi ngày, theo 3 nghiệp vụ dùng AI chấm/luyện</p>
         </div>
+        <div className="ml-auto flex gap-0.5 rounded-[10px] bg-slate-100 p-0.5">
+          {(Object.keys(TOKEN_WINDOW_DAYS) as TokenUsageWindow[]).map((w) => (
+            <button
+              className={`rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition ${w === window ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}
+              key={w}
+              onClick={() => onWindowChange(w)}
+              type="button"
+            >
+              {w} ngày
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isError ? (
+        <div className="mb-4.5 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-semibold text-red-700">
+          <AlertTriangle aria-hidden="true" className="size-4.5 shrink-0" />
+          <span className="flex-1">Không tải được dữ liệu theo khoảng thời gian này.</span>
+          <button className="shrink-0 font-bold underline underline-offset-2" onClick={onRetry} type="button">
+            Thử lại
+          </button>
+        </div>
+      ) : null}
+
+      <div className={isFetching ? 'opacity-50 transition-opacity' : 'transition-opacity'}>
+        <div className="text-[13px] font-semibold text-slate-500">Tổng token đã dùng ({days} ngày)</div>
+        <div className="mt-1 text-4xl font-extrabold tracking-tight text-slate-900 tabular-nums">
+          {fmt(secondsToMinutes(data?.totalUsed ?? 0))}
+          <small className="ml-1.5 text-base font-bold text-slate-400">phút</small>
+        </div>
+
+        <div className="mt-3.5 flex flex-wrap gap-4">
+          {QUOTA_TYPES.map((t) => (
+            <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-slate-600" key={t}>
+              <span className="size-2.5 shrink-0 rounded-[3px]" style={{ background: QUOTA_COLORS[t] }} />
+              {QUOTA_LABELS[t]}
+            </span>
+          ))}
+        </div>
+
+        <div className="relative mt-4 h-35">
+          {!hasUsage ? (
+            <div className="absolute inset-0 flex items-center justify-center text-[13px] text-slate-400">
+              Chưa có dữ liệu sử dụng trong khoảng thời gian này.
+            </div>
+          ) : (
+            <svg
+              aria-hidden="true"
+              className="size-full overflow-visible"
+              preserveAspectRatio="none"
+              viewBox={`0 0 100 ${USAGE_CHART_HEIGHT}`}
+            >
+              {QUOTA_TYPES.map((t) => (
+                <polyline
+                  fill="none"
+                  key={t}
+                  points={series[t].map((v, i) => `${i * stepX},${USAGE_CHART_HEIGHT - (v / max) * USAGE_CHART_HEIGHT}`).join(' ')}
+                  stroke={QUOTA_COLORS[t]}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+            </svg>
+          )}
+        </div>
+        <div className="relative mt-2 h-4 text-[11px] font-bold text-slate-400">
+          {labelIndices.map((i) => (
+            <span
+              className="absolute -translate-x-1/2"
+              key={bucketDates[i]}
+              style={{ left: `${i * stepX}%` }}
+            >
+              {formatShortDate(bucketDates[i])}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-4 border-t border-slate-100 pt-5.5 sm:grid-cols-3">
+        {QUOTA_TYPES.map((quotaType) => (
+          <TokenQuotaPanel key={quotaType} quotaType={quotaType} usage={usageByType.get(quotaType)} />
+        ))}
+      </div>
+
+      <div className="mt-4 flex justify-end">
         <a
-          className="ml-auto inline-flex items-center gap-1 text-[13.5px] font-bold text-indigo-600 hover:text-indigo-700"
+          className="inline-flex items-center gap-1 text-[13.5px] font-bold text-indigo-600 hover:text-indigo-700"
           href="/school-admin/subscription"
         >
           Xem gói & mua thêm
           <ArrowUpRight aria-hidden="true" className="size-3.5" />
         </a>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {QUOTA_TYPES.map((quotaType) => (
-          <TokenQuotaPanel key={quotaType} quotaType={quotaType} usage={usageByType.get(quotaType)} />
-        ))}
       </div>
     </div>
   )
@@ -697,7 +844,15 @@ export function SchoolAdminDashboardPage() {
     isFetching: isRangedExamStatusFetching,
     refetch: refetchRangedExamStatus,
   } = useExamStatusRangeQuery(dateFrom, dateTo)
-  const { data: tokenUsage } = useTokenUsageBreakdownQuery()
+  const [tokenWindow, setTokenWindow] = useState<TokenUsageWindow>('30')
+  const tokenDateFrom = useMemo(() => `${isoDateDaysAgo(TOKEN_WINDOW_DAYS[tokenWindow] - 1)}T00:00:00Z`, [tokenWindow])
+  const tokenDateTo = `${isoDateDaysAgo(0)}T23:59:59Z`
+  const {
+    data: tokenUsageTimeseries,
+    isError: isTokenUsageError,
+    isFetching: isTokenUsageFetching,
+    refetch: refetchTokenUsage,
+  } = useTokenUsageTimeseriesQuery(tokenDateFrom, tokenDateTo, 'DAY')
   const { data: questionBankStats, isLoading: isQuestionBankStatsLoading } = useQuestionBankStatsQuery()
   const { data: nearestExam, isLoading: isNearestExamLoading } = useNearestCentralizedExamQuery()
 
@@ -800,7 +955,18 @@ export function SchoolAdminDashboardPage() {
         range={examDateRange}
       />
 
-      {hasTokenSub ? <TokenUsageSection usage={tokenUsage ?? []} /> : <TokenNoSubscriptionCard />}
+      {hasTokenSub ? (
+        <TokenUsageTimeseriesSection
+          data={tokenUsageTimeseries}
+          isError={isTokenUsageError}
+          isFetching={isTokenUsageFetching}
+          onRetry={() => void refetchTokenUsage()}
+          onWindowChange={setTokenWindow}
+          window={tokenWindow}
+        />
+      ) : (
+        <TokenNoSubscriptionCard />
+      )}
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_1.35fr]">
         <Appeals a={data.appealStats} />
