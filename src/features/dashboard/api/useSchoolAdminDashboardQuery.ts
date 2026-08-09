@@ -18,9 +18,14 @@ export type SchoolAdminDashboard = {
     total: number
   }
   revenue: number
-  monthlySpending: { amount: number; month: string }[]
+  monthlySpending: { amount: number; month: string; subscriptionAmount: number; tokenTopUpAmount: number }[]
   tokenAllocated: number
   tokenUsed: number
+  subscriptionRenewal: {
+    endDate: string
+    planName: string | null
+    status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED'
+  } | null
 }
 
 const SCHOOL_ADMIN_DASHBOARD = `
@@ -45,9 +50,16 @@ const SCHOOL_ADMIN_DASHBOARD = `
       monthlySpending {
         amount
         month
+        subscriptionAmount
+        tokenTopUpAmount
       }
       tokenAllocated
       tokenUsed
+      subscriptionRenewal {
+        endDate
+        planName
+        status
+      }
     }
   }
 `
