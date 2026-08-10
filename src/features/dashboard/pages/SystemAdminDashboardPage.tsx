@@ -274,10 +274,12 @@ function IncomeChart({ monthlyRevenue }: { monthlyRevenue: SystemAdminDashboard[
   const total = points.reduce((s, p) => s + p.value, 0)
   const stepX = points.length > 1 ? 100 / (points.length - 1) : 0
 
-  let cumulative = 0
-  const linePoints = points
-    .map((p, i) => {
-      cumulative += p.value
+  const cumulativeValues = points.reduce<number[]>((acc, p) => {
+    acc.push((acc.at(-1) ?? 0) + p.value)
+    return acc
+  }, [])
+  const linePoints = cumulativeValues
+    .map((cumulative, i) => {
       const x = points.length > 1 ? i * stepX : 50
       const y = CHART_HEIGHT - (cumulative / (total || 1)) * CHART_HEIGHT
       return `${x},${y}`

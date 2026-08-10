@@ -27,8 +27,6 @@ const EXAM_STATUS = [
   { color: '#EF4444', icon: <Ban aria-hidden="true" className="size-4.5" />, key: 'cancelled' as const, label: 'Đã hủy' },
 ]
 
-const fmt = (n: number) => n.toLocaleString('vi-VN')
-
 function Kpi({
   accent,
   cta,

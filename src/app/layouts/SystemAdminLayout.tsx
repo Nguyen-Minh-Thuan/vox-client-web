@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  Bell,
   Building2,
   ChevronDown,
   ClipboardCheck,

@@ -24,7 +24,7 @@ export function SystemAdminUsersPage() {
 
   const { data, error, isLoading, isError, refetch, isFetching } = useUsersQuery(page, pageSize)
 
-  const users = data?.content ?? []
+  const users = useMemo(() => data?.content ?? [], [data])
   const totalElements = data?.totalElements ?? 0
   const totalPages = Math.ceil(totalElements / pageSize)
 
