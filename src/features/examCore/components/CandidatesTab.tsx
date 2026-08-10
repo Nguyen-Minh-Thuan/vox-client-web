@@ -8,6 +8,7 @@ import { FeedbackToast } from '@/shared/ui/FeedbackToast'
 import { StatCard } from '@/shared/ui/StatCard'
 import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { useConfirmationDialog } from '@/shared/ui/useConfirmationDialog'
+import { WarningBanner } from '@/shared/ui/WarningBanner'
 import { examResultQueryKeys } from '@/features/exam-results/api/useExamResultQueries'
 import type { ExamDirectoryUser } from '../api/examDirectoryQueries'
 import {
@@ -36,7 +37,6 @@ import { StudentPickerModal } from './StudentPickerModal'
 
 const PAGE_SIZE = 10
 const FLAG_REASON = 'Giám thị đánh dấu bài thi là nghi vấn để chờ xem xét.'
-const FORCE_END_REASON = 'Giám thị yêu cầu tạm dừng bài thi để xem xét.'
 const UNBLOCK_REASON = 'Giám thị dỡ cấm để học sinh tiếp tục bài thi đang dở.'
 
 type CandidatesTabProps = {
@@ -49,6 +49,10 @@ type CandidatesTabProps = {
   // Thao tác giám thị bên dưới vẫn mở vì đó là việc phải làm TRONG lúc thi.
   locked?: boolean
   papers: ExamPaperDto[]
+  // Cảnh báo chủ động hạn mức token (chỉ bài trên lớp truyền xuống — ClassTestPages tính sẵn
+  // dựa trên số thí sinh HIỆN TẠI). null/undefined = không hiển thị (kỳ thi tập trung không có
+  // khái niệm hạn mức này, xem ClassTestTokenQuotaGuardService phía BE).
+  quotaWarning?: string | null
 }
 
 function getLatestAttemptByStatuses(
@@ -74,7 +78,7 @@ function getCandidateBadge(candidate: ExamCandidateDto) {
   return getCandidateStatusDisplay(candidate.scheduleId ? candidate.status : undefined)
 }
 
-export function CandidatesTab({ canManage, examId, examKind, locked = false, papers }: CandidatesTabProps) {
+export function CandidatesTab({ canManage, examId, examKind, locked = false, papers, quotaWarning }: CandidatesTabProps) {
   const queryClient = useQueryClient()
   const candidatesQuery = useExamCandidatesQuery(examId)
   const schedulesQuery = useExamSchedulesQuery(examId)
@@ -335,7 +339,8 @@ export function CandidatesTab({ canManage, examId, examKind, locked = false, pap
             const result = await confirmWithReason({
               message: `Tạm dừng bài thi của ${candidateName} để xem xét? Học sinh sẽ bị ngắt kết nối ngay và không vào lại được cho tới khi được dỡ cấm.`,
               reasonLabel: 'Lý do buộc kết thúc',
-              reasonPlaceholder: 'Nhập lý do nếu cần...',
+              reasonPlaceholder: 'Nhập lý do buộc kết thúc bài thi...',
+              requireReason: true,
               title: 'Xác nhận buộc kết thúc',
             })
             if (!result.confirmed) {
@@ -344,7 +349,7 @@ export function CandidatesTab({ canManage, examId, examKind, locked = false, pap
 
             try {
               await forceEndExamSessionMutation.mutateAsync({
-                reason: result.reason || FORCE_END_REASON,
+                reason: result.reason,
                 sessionId: forceEndSession.sessionId,
               })
               await invalidateAll()
@@ -399,6 +404,8 @@ export function CandidatesTab({ canManage, examId, examKind, locked = false, pap
           vấn, buộc kết thúc hoặc dỡ cấm.
         </div>
       ) : null}
+
+      {canEditRoster ? <WarningBanner className="mb-3.5" message={quotaWarning ?? null} /> : null}
 
       <div className="grid gap-3 sm:grid-cols-4">
         <StatCard icon={<UserPlus size={19} />} iconTone="indigo" label="Tổng thí sinh" value={candidates.length} />

@@ -24,7 +24,6 @@ import { StatusBadge } from '@/shared/ui/StatusBadge'
 import { useConfirmationDialog } from '@/shared/ui/useConfirmationDialog'
 
 const FLAG_REASON = 'Giám thị đánh dấu bài thi là nghi vấn để chờ xem xét.'
-const FORCE_END_REASON = 'Giám thị yêu cầu tạm dừng bài thi để xem xét.'
 const UNBLOCK_REASON = 'Giám thị dỡ cấm để học sinh tiếp tục bài thi đang dở.'
 
 function areIdSetsEqual(a: Set<string>, b: Set<string>) {
@@ -106,14 +105,11 @@ export function ProctorAttendanceDetailPage() {
     const attendedIds = new Set(
       candidates.filter((candidate) => candidate.status === 'ATTENDED').map((candidate) => candidate.candidateId),
     )
+    // candidates arrives asynchronously from the query, so the locally-editable attendance
+    // selection can only be (re)seeded here once a schedule's candidate list loads/changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedAttendedIds((previous) => (areIdSetsEqual(previous, attendedIds) ? previous : attendedIds))
   }, [candidates, activeScheduleId])
-
-  useEffect(() => {
-    if (otpState && otpState.expiresAtMs <= clockNow) {
-      setOtpState(null)
-    }
-  }, [clockNow, otpState])
 
   const attendanceDisabledReason = getDisabledReason(selectedSchedule?.startDate, selectedSchedule?.endDate)
   const absentCount = Math.max(0, candidates.length - selectedAttendedIds.size)
@@ -122,6 +118,7 @@ export function ProctorAttendanceDetailPage() {
     [candidates, selectedAttendedIds],
   )
   const otpSecondsRemaining = otpState ? Math.max(0, Math.ceil((otpState.expiresAtMs - clockNow) / 1000)) : 0
+  const otpIsDisplayable = otpState !== null && otpSecondsRemaining > 0
 
   async function invalidateAttendance() {
     await queryClient.invalidateQueries({ queryKey: examQueryKeys.proctorSchedules() })
@@ -169,7 +166,7 @@ export function ProctorAttendanceDetailPage() {
         scheduleId: selectedSchedule.scheduleId,
       })
       setOtpState({
-        expiresAtMs: Date.now() + Math.max(0, data.expiresSeconds) * 1000,
+        expiresAtMs: clockNow + Math.max(0, data.expiresSeconds) * 1000,
         otp: data.otp,
       })
     } catch (error) {
@@ -298,7 +295,8 @@ export function ProctorAttendanceDetailPage() {
             const result = await confirmWithReason({
               message: `Tạm dừng bài thi của ${candidateName} để xem xét? Học sinh sẽ bị ngắt kết nối ngay và không vào lại được cho tới khi được dỡ cấm.`,
               reasonLabel: 'Lý do buộc kết thúc',
-              reasonPlaceholder: 'Nhập lý do nếu cần...',
+              reasonPlaceholder: 'Nhập lý do buộc kết thúc bài thi...',
+              requireReason: true,
               title: 'Xác nhận buộc kết thúc',
             })
             if (!result.confirmed) {
@@ -307,7 +305,7 @@ export function ProctorAttendanceDetailPage() {
 
             try {
               await forceEndExamSessionMutation.mutateAsync({
-                reason: result.reason || FORCE_END_REASON,
+                reason: result.reason,
                 sessionId: candidate.sessionId ?? '',
               })
               await invalidateAttendance()
@@ -345,42 +343,6 @@ export function ProctorAttendanceDetailPage() {
       </div>
 
       <div className="grid gap-5">
-        {false ? <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="text-lg font-extrabold text-slate-900">Danh sách ca thi</h2>
-          <div className="mt-4 grid gap-3">
-            {schedulesQuery.isLoading ? (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                Đang tải danh sách ca thi...
-              </div>
-            ) : schedules.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-400">
-                Bạn chưa được phân công ca thi nào.
-              </div>
-            ) : (
-              schedules.map((schedule) => {
-                const isActive = schedule.scheduleId === activeScheduleId
-                return (
-                  <button
-                    className={`rounded-xl border px-4 py-3 text-left transition ${
-                      isActive
-                        ? 'border-cyan-400 bg-cyan-50'
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                    key={schedule.scheduleId}
-                    onClick={() => setOtpState(null)}
-                    type="button"
-                  >
-                    <p className="text-sm font-bold text-slate-900">{schedule.examName ?? schedule.examId}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {schedule.roomName ?? 'Chưa có phòng'} • {formatDateTime(schedule.startDate)}
-                    </p>
-                  </button>
-                )
-              })
-            )}
-          </div>
-        </div> : null}
-
         <div className="grid gap-5">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
@@ -448,7 +410,7 @@ export function ProctorAttendanceDetailPage() {
                 onClick={() => void handleFetchOtp()}
                 type="button"
               >
-                {getScheduleOtpMutation.isPending ? 'Đang lấy mã...' : otpState ? 'Xem lại mã OTP' : 'Tạo mã OTP'}
+                {getScheduleOtpMutation.isPending ? 'Đang lấy mã...' : otpIsDisplayable ? 'Xem lại mã OTP' : 'Tạo mã OTP'}
               </button>
 
               {otpState && otpSecondsRemaining > 0 ? (

@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  Bell,
   BookOpen,
   Building2,
   ChevronDown,
@@ -15,10 +14,8 @@ import {
   LogOut,
   Menu,
   Search,
-  Settings,
   ShieldCheck,
   UserRound,
-  Users,
   X,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router'
@@ -26,6 +23,7 @@ import logoImage from '@/assets/images/logo.png'
 import { clearAuthState } from '@/app/store/authSlice'
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks'
 import { clearAuthTokens } from '@/features/auth/session/authSession'
+import { NotificationBell, unregisterPushDevice } from '@/features/notifications'
 import { useQuestionsQuery } from '@/features/question/api/useQuestionsQuery'
 import { useProfileQuery } from '@/features/profile'
 
@@ -72,11 +70,6 @@ const navigationItems: NavigationItem[] = [
     to: '/system-admin/frameworks',
   },
   {
-    icon: Users,
-    label: 'Quản lý người dùng',
-    to: '/system-admin/users',
-  },
-  {
     icon: Building2,
     label: 'Quản lý trường học',
     to: '/system-admin/schools',
@@ -100,11 +93,6 @@ const navigationItems: NavigationItem[] = [
     icon: CreditCard,
     label: 'Gói dịch vụ',
     to: '/system-admin/subscription',
-  },
-  {
-    icon: Settings,
-    label: 'Cài đặt hệ thống',
-    to: '/system-admin/settings',
   },
 ]
 
@@ -341,9 +329,12 @@ export function SystemAdminLayout() {
       : group,
   )
 
-  function handleLogout() {
+  async function handleLogout() {
     setIsMobileMenuOpen(false)
     setIsUserMenuOpen(false)
+    // Gỡ thiết bị nhận thông báo TRƯỚC khi xoá token: request cần header
+    // Authorization, và backend không có endpoint đăng xuất nào dọn giúp việc này.
+    await unregisterPushDevice()
     clearAuthTokens()
     dispatch(clearAuthState())
     navigate('/login', { replace: true })
@@ -408,14 +399,7 @@ export function SystemAdminLayout() {
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <button
-              aria-label="Thông báo"
-              className="relative inline-flex size-11 items-center justify-center rounded-lg border border-transparent text-blue-950 transition hover:border-slate-200 hover:bg-slate-50"
-              type="button"
-            >
-              <Bell aria-hidden="true" className="size-5" />
-              <span className="absolute right-2 top-2 size-2 rounded-full bg-red-500 ring-2 ring-white" />
-            </button>
+            <NotificationBell className="text-blue-950" />
 
             <div className="relative">
               <button
